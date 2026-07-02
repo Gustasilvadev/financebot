@@ -2,7 +2,7 @@
 
 Bot de Telegram para **gestão de finanças pessoais**. Centraliza o controle de contas, gastos e valores a receber diretamente no chat, de forma rápida e conversacional.
 
-> Projeto pessoal e privado: o bot responde apenas ao seu proprietário.
+> Projeto pessoal.
 
 ## ✨ Funcionalidades
 
@@ -73,9 +73,3 @@ O fluxo de responsabilidade é sempre **comando → serviço → repositório**,
    ```bash
    npm run dev
    ```
-
-As credenciais e tokens são fornecidos exclusivamente por variáveis de ambiente e **nunca** são versionados.
-
-## 📄 Licença
-
-MIT
