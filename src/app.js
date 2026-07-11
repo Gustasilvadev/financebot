@@ -3,6 +3,7 @@ import { bot } from './core/bot.js';
 import { auth } from './core/middlewares/auth.js';
 import { stage } from './core/stage.js';
 import { registrarBancos } from './modules/bancos/bancos.commands.js';
+import { registrarFluxoCaixa } from './modules/fluxoCaixa/fluxoCaixa.commands.js';
 
 // Monta o bot: middlewares, handlers base, módulos e tratamento global de erro.
 export function configurarBot() {
@@ -20,6 +21,7 @@ export function configurarBot() {
 
   // Módulos de negócio (novos pilares entram aqui).
   registrarBancos(bot);
+  registrarFluxoCaixa(bot);
 
   // Captura erros não tratados dentro dos handlers.
   bot.catch((err, ctx) => {
