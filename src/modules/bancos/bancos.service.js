@@ -79,3 +79,10 @@ export async function excluirBanco(id) {
   await bancosRepository.excluir(id);
   return banco;
 }
+
+// Soma um delta ao saldo de um banco.
+export async function ajustarSaldo(bancoId, delta) {
+  const banco = await buscarBanco(bancoId);
+  const novoSaldo = Math.round((Number(banco.saldo_atual) + delta) * 100) / 100;
+  return bancosRepository.atualizarSaldo(bancoId, novoSaldo);
+}
