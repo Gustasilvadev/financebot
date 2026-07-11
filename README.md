@@ -6,7 +6,7 @@ Bot de Telegram para **gestão de finanças pessoais**. Centraliza o controle de
 
 ## ✨ Funcionalidades
 
-O projeto é organizado em três pilares. O módulo de **Bancos** já está disponível; os demais estão em desenvolvimento.
+O projeto é organizado em três pilares. Os módulos de **Bancos** e **Fluxo de Caixa** já estão disponíveis; **Empréstimos** está em desenvolvimento.
 
 ### 🏦 Bancos (disponível)
 Gestão de saldos de contas independentes (ex.: Nubank, PicPay, carteira).
@@ -21,8 +21,15 @@ Gestão de saldos de contas independentes (ex.: Nubank, PicPay, carteira).
 
 Comandos gerais: `/start` e `/help`.
 
-### 💸 Fluxo de Caixa (em breve)
-Registro de entradas e saídas com datas de vencimento e suporte a parcelamentos.
+### 💸 Fluxo de Caixa (disponível)
+Registro de entradas e saídas com data de vencimento, categorias, vínculo com um banco e parcelamento.
+
+| Comando | Descrição |
+|---|---|
+| `/gasto` | Registra uma despesa (com parcelamento opcional) |
+| `/receita` | Registra uma entrada (com parcelamento opcional) |
+| `/pagarconta` | Lista as pendências do mês para dar baixa |
+| `/mes` | Balanço do mês: receitas, despesas pagas/pendentes e saldo previsto |
 
 ### 🤝 Empréstimos (em breve)
 Controle de valores emprestados a terceiros e seus acordos.
@@ -32,7 +39,6 @@ Controle de valores emprestados a terceiros e seus acordos.
 - **Node.js** (ESM)
 - **Telegraf** — framework para bots do Telegram
 - **Supabase** (PostgreSQL) — banco de dados
-- **dotenv** — configuração por ambiente
 
 ## 🏛️ Arquitetura
 
@@ -42,13 +48,13 @@ Organização modular por domínio (*feature-based*), com camadas bem definidas 
 src/
 ├── config/     # Configuração e conexão com serviços externos
 ├── core/       # Infraestrutura do bot (instância, middlewares, wizards)
-├── modules/    # Cada pilar de negócio (bancos, ...)
+├── modules/    # Cada pilar de negócio (bancos, fluxoCaixa)
 │   └── bancos/
 │       ├── *.commands.js    # Handlers dos comandos
 │       ├── *.scenes.js      # Fluxos conversacionais (wizards)
 │       ├── *.service.js     # Regras de negócio
 │       └── *.repository.js  # Acesso a dados
-└── shared/     # Utilitários reutilizáveis (formatação, erros)
+└── shared/     # Utilitários reutilizáveis (formatação, datas, erros)
 ```
 
 O fluxo de responsabilidade é sempre **comando → serviço → repositório**, mantendo as regras de negócio isoladas da interface e do banco de dados.
