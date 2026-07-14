@@ -6,9 +6,9 @@ Bot de Telegram para **gestão de finanças pessoais**. Centraliza o controle de
 
 ## ✨ Funcionalidades
 
-O projeto é organizado em três pilares. Os módulos de **Bancos** e **Fluxo de Caixa** já estão disponíveis; **Empréstimos** está em desenvolvimento.
+Os três pilares — **Bancos**, **Fluxo de Caixa** e **Empréstimos** — estão disponíveis.
 
-### 🏦 Bancos (disponível)
+### 🏦 Bancos
 Gestão de saldos de contas independentes (ex.: Nubank, PicPay, carteira).
 
 | Comando | Descrição |
@@ -17,11 +17,8 @@ Gestão de saldos de contas independentes (ex.: Nubank, PicPay, carteira).
 | `/addbanco` | Cadastra uma nova conta (nome + saldo inicial) |
 | `/atualizarsaldo` | Corrige o saldo de uma conta |
 | `/apagarbanco` | Remove uma conta (com confirmação) |
-| `/cancelar` | Cancela a operação em andamento |
 
-Comandos gerais: `/start` e `/help`.
-
-### 💸 Fluxo de Caixa (disponível)
+### 💸 Fluxo de Caixa
 Registro de entradas e saídas com data de vencimento, categorias, vínculo com um banco e parcelamento.
 
 | Comando | Descrição |
@@ -31,8 +28,19 @@ Registro de entradas e saídas com data de vencimento, categorias, vínculo com 
 | `/pagarconta` | Lista as pendências do mês para dar baixa |
 | `/mes` | Balanço do mês: receitas, despesas pagas/pendentes e saldo previsto |
 
-### 🤝 Empréstimos (em breve)
-Controle de valores emprestados a terceiros e seus acordos.
+### 🤝 Empréstimos
+Controle de valores emprestados a terceiros, com débito/crédito automático no banco.
+
+| Comando | Descrição |
+|---|---|
+| `/emprestar` | Registra um empréstimo e debita o valor do banco |
+| `/emprestimos` | Lista quem te deve e o total a receber |
+| `/quitaremprestimo` | Dá baixa e credita o valor acordado no banco |
+
+### 🔔 Extras
+- **Menu de comandos:** ao digitar `/` no Telegram, a lista de comandos aparece com autocomplete. `/help` mostra o guia completo.
+- **Notificações diárias:** um aviso proativo com os vencimentos do dia (contas e empréstimos), disparado por um cron externo que também mantém o serviço ativo.
+- Dentro de qualquer cadastro, `/cancelar` aborta a operação.
 
 ## 🛠️ Tecnologias
 
@@ -47,8 +55,8 @@ Organização modular por domínio (*feature-based*), com camadas bem definidas 
 ```
 src/
 ├── config/     # Configuração e conexão com serviços externos
-├── core/       # Infraestrutura do bot (instância, middlewares, wizards)
-├── modules/    # Cada pilar de negócio (bancos, fluxoCaixa)
+├── core/       # Infraestrutura do bot (instância, middlewares, wizards, servidor HTTP)
+├── modules/    # Cada pilar de negócio (bancos, fluxoCaixa, emprestimos)
 │   └── bancos/
 │       ├── *.commands.js    # Handlers dos comandos
 │       ├── *.scenes.js      # Fluxos conversacionais (wizards)
