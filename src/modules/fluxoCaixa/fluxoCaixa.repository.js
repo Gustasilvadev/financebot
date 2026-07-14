@@ -60,3 +60,16 @@ export async function marcarComoPago(id) {
   if (error) throw error;
   return data;
 }
+
+// Lista as despesas PENDENTES que vencem na data informada.
+export async function listarDespesasVencendoEm(dataISO) {
+  const { data, error } = await supabase
+    .from(TABELA)
+    .select('*')
+    .eq('tipo', 'DESPESA')
+    .eq('status', 'PENDENTE')
+    .eq('data_vencimento', dataISO);
+
+  if (error) throw error;
+  return data ?? [];
+}

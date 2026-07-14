@@ -22,7 +22,7 @@ function opcional(chave, padrao = '') {
 
 const nodeEnv = opcional('NODE_ENV', 'development');
 
-// Config central da aplicação (congelada e já validada no boot).
+// Config central da aplicação.
 export const config = Object.freeze({
   nodeEnv,
   isProduction: nodeEnv === 'production',
@@ -34,6 +34,7 @@ export const config = Object.freeze({
   supabaseServiceRoleKey: obrigatoria('SUPABASE_SERVICE_ROLE_KEY'),
   webhookDomain: opcional('WEBHOOK_DOMAIN'),
   port: Number(opcional('PORT', '3000')),
+  cronToken: obrigatoria('CRON_TOKEN'),
 });
 
 if (Number.isNaN(config.telegramUserId)) {

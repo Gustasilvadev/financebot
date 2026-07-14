@@ -1,7 +1,7 @@
 import * as fluxoRepository from './fluxoCaixa.repository.js';
 import * as bancosService from '../bancos/bancos.service.js';
 import { parseValorBRL } from '../../shared/formatters/currency.js';
-import { parseData, adicionarMeses, intervaloDoMes, rotuloDoMes } from '../../shared/formatters/date.js';
+import { parseData, adicionarMeses, intervaloDoMes, rotuloDoMes, hojeISO } from '../../shared/formatters/date.js';
 import { ErroDeNegocio } from '../../shared/errors/ErroDeNegocio.js';
 
 const DESCRICAO_MAX = 255;
@@ -95,6 +95,11 @@ export async function registrarMovimentacao(dados) {
 export async function listarPendentesDoMes() {
   const { inicio, fim } = intervaloDoMes();
   return fluxoRepository.listarPendentesDoMes(inicio, fim);
+}
+
+// Lista as despesas pendentes que vencem hoje (para as notificações).
+export async function listarDespesasVencendoHoje() {
+  return fluxoRepository.listarDespesasVencendoEm(hojeISO());
 }
 
 export async function pagarConta(id) {

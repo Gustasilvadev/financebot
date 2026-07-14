@@ -1,5 +1,6 @@
 import { configurarBot } from './src/app.js';
 import { config } from './src/config/env.js';
+import { iniciarServidorHttp } from './src/core/httpServer.js';
 
 const bot = configurarBot();
 
@@ -14,12 +15,13 @@ async function iniciar() {
     });
     console.log(`🚀 FinanceBot no ar via WEBHOOK em ${config.webhookDomain}`);
   } else {
-    // Sem await: em polling, launch() só resolve quando o bot é parado.
     bot.launch().catch((err) => {
       console.error('[BOOT] Falha no long polling:', err);
       process.exit(1);
     });
-    console.log('🤖 FinanceBot no ar via LONG POLLING (modo desenvolvimento).');
+    // Servidor HTTP na PORT: o keep-alive/cron mantém Render e Supabase.
+    iniciarServidorHttp();
+    console.log('🤖 FinanceBot no ar via LONG POLLING + servidor keep-alive.');
   }
 }
 
