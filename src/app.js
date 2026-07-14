@@ -5,6 +5,7 @@ import { stage } from './core/stage.js';
 import { registrarBancos } from './modules/bancos/bancos.commands.js';
 import { registrarFluxoCaixa } from './modules/fluxoCaixa/fluxoCaixa.commands.js';
 import { registrarEmprestimos } from './modules/emprestimos/emprestimos.commands.js';
+import { TEXTO_AJUDA } from './core/menu.js';
 
 // Monta o bot: middlewares, handlers base, módulos e tratamento global de erro.
 export function configurarBot() {
@@ -13,12 +14,9 @@ export function configurarBot() {
   bot.use(stage.middleware());
 
   bot.start((ctx) =>
-    ctx.reply(
-      `👋 Olá, ${ctx.from.first_name}! Seu FinanceBot está no ar.\n\n` +
-        `Os módulos (Bancos, Fluxo de Caixa e Empréstimos) serão adicionados em breve.`
-    )
+    ctx.reply(`👋 Olá, ${ctx.from.first_name}! Seu FinanceBot está pronto.\n\nUse /help para ver todos os comandos.`)
   );
-  bot.help((ctx) => ctx.reply('ℹ️ Comandos em construção. Volte já já!'));
+  bot.help((ctx) => ctx.reply(TEXTO_AJUDA));
 
   // Módulos de negócio (novos pilares entram aqui).
   registrarBancos(bot);

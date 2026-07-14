@@ -1,11 +1,15 @@
 import { configurarBot } from './src/app.js';
 import { config } from './src/config/env.js';
 import { iniciarServidorHttp } from './src/core/httpServer.js';
+import { configurarMenuDeComandos } from './src/core/menu.js';
 
 const bot = configurarBot();
 
 // Sobe o bot em webhook (produção) ou long polling (desenvolvimento).
 async function iniciar() {
+  // Registra o menu de comandos do Telegram.
+  configurarMenuDeComandos().catch((err) => console.error('[menu] Falha ao registrar comandos:', err));
+
   if (config.isProduction && config.webhookDomain) {
     await bot.launch({
       webhook: {
