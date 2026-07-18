@@ -73,3 +73,22 @@ export async function listarDespesasVencendoEm(dataISO) {
   if (error) throw error;
   return data ?? [];
 }
+
+// Atualiza campos específicos de uma movimentação e retorna o registro.
+export async function atualizar(id, campos) {
+  const { data, error } = await supabase
+    .from(TABELA)
+    .update(campos)
+    .eq('id', id)
+    .select()
+    .single();
+
+  if (error) throw error;
+  return data;
+}
+
+// Remove uma movimentação.
+export async function excluir(id) {
+  const { error } = await supabase.from(TABELA).delete().eq('id', id);
+  if (error) throw error;
+}

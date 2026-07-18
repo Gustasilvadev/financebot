@@ -142,3 +142,81 @@ export async function balancoDoMes() {
     vazio: movs.length === 0,
   };
 }
+
+// Contribuição de uma movimentação ao saldo do banco (0 se pendente).
+export function efeitoNoSaldo(mov) {
+  if (mov.status !== 'PAGO') return 0;
+  const valor = Number(mov.valor);
+  return mov.tipo === 'DESPESA' ? -valor : valor;
+}
+
+// Valida o novo valor de um campo e devolve o objeto para o UPDATE.
+function validarCampo(campo, valorRaw) {
+  switch (campo) {
+    case 'descricao':
+      return { descricao: validarDescricao(valorRaw) };
+    case 'valor':
+      return { valor: validarValor(valorRaw) };
+    case 'categoria': {
+      const categoria = String(valorRaw ?? '').trim().slice(0, CATEGORIA_MAX);
+      if (categoria === '') throw new ErroDeNegocio('A categoria não pode ser vazia.');
+      return { categoria };
+    }
+    case 'data_vencimento':
+      return { data_vencimento: validarData(valorRaw) };
+    case 'status':
+      if (valorRaw !== 'PAGO' && valorRaw !== 'PENDENTE') throw new ErroDeNegocio('Status inválido.');
+      return { status: valorRaw };
+    default:
+      throw new ErroDeNegocio('Campo inválido.');
+  }
+}
+
+// Lista as movimentações do mês atual (para o /editar).
+export async function listarDoMes() {
+  const { inicio, fim } = intervaloDoMes();
+  return fluxoRepository.listarDoMes(inicio, fim);
+}
+
+// Edita um campo de uma movimentação e reconcilia o saldo, se necessário.
+export async function editarMovimentacao(id, campo, valorRaw) {
+  const antiga = await fluxoRepository.buscarPorId(id);
+  if (!antiga) throw new ErroDeNegocio('Movimentação não encontrada.');
+
+  const campos = validarCampo(campo, valorRaw);
+  const atualizada = await fluxoRepository.atualizar(id, campos);
+
+  const delta = Math.round((efeitoNoSaldo(atualizada) - efeitoNoSaldo(antiga)) * 100) / 100;
+  let saldoAjustado = false;
+  let semBanco = false;
+  if (delta !== 0) {
+    if (atualizada.banco_id != null) {
+      await bancosService.ajustarSaldo(atualizada.banco_id, delta);
+      saldoAjustado = true;
+    } else {
+      semBanco = true;
+    }
+  }
+  return { antiga, atualizada, campo, delta, saldoAjustado, semBanco };
+}
+
+// Exclui uma movimentação e estorna o saldo, se ela estava paga.
+export async function excluirMovimentacao(id) {
+  const mov = await fluxoRepository.buscarPorId(id);
+  if (!mov) throw new ErroDeNegocio('Movimentação não encontrada.');
+
+  await fluxoRepository.excluir(id);
+
+  const estorno = -efeitoNoSaldo(mov);
+  let saldoAjustado = false;
+  let semBanco = false;
+  if (estorno !== 0) {
+    if (mov.banco_id != null) {
+      await bancosService.ajustarSaldo(mov.banco_id, estorno);
+      saldoAjustado = true;
+    } else {
+      semBanco = true;
+    }
+  }
+  return { mov, estorno, saldoAjustado, semBanco };
+}
