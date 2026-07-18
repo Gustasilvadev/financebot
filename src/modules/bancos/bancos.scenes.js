@@ -1,38 +1,10 @@
-import { Scenes, Markup } from 'telegraf';
+import { Scenes } from 'telegraf';
 import * as bancosService from './bancos.service.js';
 import { parseValorBRL, formatarBRL } from '../../shared/formatters/currency.js';
-import { ErroDeNegocio } from '../../shared/errors/ErroDeNegocio.js';
+import { tentarCancelar, responderErro, tecladoBancos } from '../../shared/scenes/helpers.js';
+import { pedirConfirmacao, criarPassoConfirmacao } from '../../shared/scenes/confirmacao.js';
 
-// Encerra a scene se o usuário mandou /cancelar. Retorna true se cancelou.
-async function tentarCancelar(ctx) {
-  if (ctx.message?.text?.trim() === '/cancelar') {
-    await ctx.reply('❌ Operação cancelada.');
-    await ctx.scene.leave();
-    return true;
-  }
-  return false;
-}
-
-// Responde erro de negócio com a mensagem própria; erro inesperado com genérica.
-async function responderErro(ctx, err, acao) {
-  if (err instanceof ErroDeNegocio) {
-    await ctx.reply(`⚠️ ${err.message}`);
-  } else {
-    console.error(`[bancos] Erro ao ${acao}:`, err);
-    await ctx.reply('⚠️ Algo deu errado. Tente novamente mais tarde.');
-  }
-}
-
-// Monta os bancos como botões inline com um prefixo de callback.
-function tecladoDeBancos(bancos, prefixo) {
-  return Markup.inlineKeyboard(
-    bancos.map((b) => [
-      Markup.button.callback(`${b.nome} — ${formatarBRL(b.saldo_atual)}`, `${prefixo}:${b.id}`),
-    ])
-  );
-}
-
-// Wizard de /addbanco: pergunta nome e saldo inicial, depois cria o banco.
+// Wizard de /addbanco: pergunta nome e saldo inicial, confirma e cria o banco.
 const addBancoScene = new Scenes.WizardScene(
   'add-banco',
 
@@ -57,28 +29,37 @@ const addBancoScene = new Scenes.WizardScene(
     return ctx.wizard.next();
   },
 
-  // Recebe o saldo, valida e salva.
+  // Recebe o saldo, valida e pede confirmação.
   async (ctx) => {
     if (await tentarCancelar(ctx)) return;
 
-    if (parseValorBRL(ctx.message?.text) === null) {
+    const valor = parseValorBRL(ctx.message?.text);
+    if (valor === null) {
       await ctx.reply('❌ Valor inválido. Ex.: 1500 ou 1500,50. Tente de novo (ou /cancelar).');
       return;
     }
+    ctx.wizard.state.saldoRaw = ctx.message.text;
 
+    const resumo =
+      `🏦 Confira o banco:\n` +
+      `• Nome: ${ctx.wizard.state.nome}\n` +
+      `• Saldo inicial: ${formatarBRL(valor)}`;
+    return pedirConfirmacao(ctx, resumo);
+  },
+
+  // Ao confirmar, cria o banco.
+  criarPassoConfirmacao(async (ctx) => {
+    const st = ctx.wizard.state;
     try {
-      const banco = await bancosService.adicionarBanco(ctx.wizard.state.nome, ctx.message.text);
-      await ctx.reply(
-        `✅ Banco "${banco.nome}" criado com saldo inicial de ${formatarBRL(banco.saldo_atual)}.`
-      );
+      const banco = await bancosService.adicionarBanco(st.nome, st.saldoRaw);
+      await ctx.reply(`✅ Banco "${banco.nome}" criado com saldo inicial de ${formatarBRL(banco.saldo_atual)}.`);
     } catch (err) {
       await responderErro(ctx, err, 'criar o banco');
     }
-    return ctx.scene.leave();
-  }
+  })
 );
 
-// Wizard de /atualizarsaldo: escolhe o banco e substitui o saldo (reconciliação).
+// Wizard de /atualizarsaldo: escolhe o banco, confirma e substitui o saldo.
 const atualizarSaldoScene = new Scenes.WizardScene(
   'atualizar-saldo',
 
@@ -91,7 +72,7 @@ const atualizarSaldoScene = new Scenes.WizardScene(
     }
 
     ctx.wizard.state.bancos = bancos;
-    await ctx.reply('🔧 Qual banco deseja atualizar?', tecladoDeBancos(bancos, 'sel'));
+    await ctx.reply('🔧 Qual banco deseja atualizar?', tecladoBancos(bancos, 'sel'));
     return ctx.wizard.next();
   },
 
@@ -114,6 +95,8 @@ const atualizarSaldoScene = new Scenes.WizardScene(
     }
 
     ctx.wizard.state.bancoId = id;
+    ctx.wizard.state.bancoNome = banco.nome;
+    ctx.wizard.state.saldoAtual = banco.saldo_atual;
     await ctx.reply(
       `Saldo atual de ${banco.nome}: ${formatarBRL(banco.saldo_atual)}\n\n` +
         `💵 Qual o novo saldo? (ou /cancelar)`
@@ -121,20 +104,30 @@ const atualizarSaldoScene = new Scenes.WizardScene(
     return ctx.wizard.next();
   },
 
-  // Recebe o novo saldo, valida e atualiza.
+  // Recebe o novo saldo, valida e pede confirmação.
   async (ctx) => {
     if (await tentarCancelar(ctx)) return;
 
-    if (parseValorBRL(ctx.message?.text) === null) {
+    const valor = parseValorBRL(ctx.message?.text);
+    if (valor === null) {
       await ctx.reply('❌ Valor inválido. Ex.: 1500 ou 1500,50. Tente de novo (ou /cancelar).');
       return;
     }
+    ctx.wizard.state.novoSaldoRaw = ctx.message.text;
 
+    const st = ctx.wizard.state;
+    const resumo =
+      `🔧 Confira a atualização:\n` +
+      `• Banco: ${st.bancoNome}\n` +
+      `• Saldo: ${formatarBRL(st.saldoAtual)} → ${formatarBRL(valor)}`;
+    return pedirConfirmacao(ctx, resumo);
+  },
+
+  // Ao confirmar, atualiza o saldo.
+  criarPassoConfirmacao(async (ctx) => {
+    const st = ctx.wizard.state;
     try {
-      const { anterior, atualizado } = await bancosService.atualizarSaldoBanco(
-        ctx.wizard.state.bancoId,
-        ctx.message.text
-      );
+      const { anterior, atualizado } = await bancosService.atualizarSaldoBanco(st.bancoId, st.novoSaldoRaw);
       await ctx.reply(
         `✅ Saldo do ${atualizado.nome} atualizado: ` +
           `${formatarBRL(anterior.saldo_atual)} → ${formatarBRL(atualizado.saldo_atual)}.`
@@ -142,11 +135,10 @@ const atualizarSaldoScene = new Scenes.WizardScene(
     } catch (err) {
       await responderErro(ctx, err, 'atualizar o saldo');
     }
-    return ctx.scene.leave();
-  }
+  })
 );
 
-// Wizard de /apagarbanco: escolhe o banco e exclui após confirmação.
+// Wizard de /apagarbanco: escolhe o banco, confirma e exclui.
 const apagarBancoScene = new Scenes.WizardScene(
   'apagar-banco',
 
@@ -159,11 +151,11 @@ const apagarBancoScene = new Scenes.WizardScene(
     }
 
     ctx.wizard.state.bancos = bancos;
-    await ctx.reply('🗑️ Qual banco deseja apagar?', tecladoDeBancos(bancos, 'del'));
+    await ctx.reply('🗑️ Qual banco deseja apagar?', tecladoBancos(bancos, 'del'));
     return ctx.wizard.next();
   },
 
-  // Recebe a seleção e pede confirmação explícita.
+  // Recebe a seleção e pede confirmação.
   async (ctx) => {
     if (await tentarCancelar(ctx)) return;
 
@@ -182,41 +174,21 @@ const apagarBancoScene = new Scenes.WizardScene(
     }
 
     ctx.wizard.state.banco = banco;
-    const teclado = Markup.inlineKeyboard([
-      [Markup.button.callback('✅ Confirmar', 'confirmar')],
-      [Markup.button.callback('↩️ Cancelar', 'cancelar')],
-    ]);
-    await ctx.reply(
-      `Apagar "${banco.nome}" (${formatarBRL(banco.saldo_atual)})? Esta ação é irreversível.`,
-      teclado
+    return pedirConfirmacao(
+      ctx,
+      `🗑️ Apagar "${banco.nome}" (${formatarBRL(banco.saldo_atual)})?\nEsta ação é irreversível.`
     );
-    return ctx.wizard.next();
   },
 
-  // Executa a exclusão se confirmado.
-  async (ctx) => {
-    if (await tentarCancelar(ctx)) return;
-
-    const escolha = ctx.callbackQuery?.data;
-    if (escolha !== 'confirmar' && escolha !== 'cancelar') {
-      await ctx.reply('👆 Toque em Confirmar ou Cancelar.');
-      return;
-    }
-    await ctx.answerCbQuery();
-
-    if (escolha === 'cancelar') {
-      await ctx.reply('↩️ Exclusão cancelada.');
-      return ctx.scene.leave();
-    }
-
+  // Ao confirmar, exclui o banco.
+  criarPassoConfirmacao(async (ctx) => {
     try {
       const banco = await bancosService.excluirBanco(ctx.wizard.state.banco.id);
       await ctx.reply(`🗑️ Banco "${banco.nome}" apagado.`);
     } catch (err) {
       await responderErro(ctx, err, 'apagar o banco');
     }
-    return ctx.scene.leave();
-  }
+  })
 );
 
 export const bancosScenes = [addBancoScene, atualizarSaldoScene, apagarBancoScene];

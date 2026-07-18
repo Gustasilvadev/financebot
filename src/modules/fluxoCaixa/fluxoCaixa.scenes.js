@@ -3,7 +3,8 @@ import * as fluxoService from './fluxoCaixa.service.js';
 import * as bancosService from '../bancos/bancos.service.js';
 import { parseValorBRL, formatarBRL } from '../../shared/formatters/currency.js';
 import { parseData, formatarData } from '../../shared/formatters/date.js';
-import { ErroDeNegocio } from '../../shared/errors/ErroDeNegocio.js';
+import { tentarCancelar, responderErro, tecladoBancos } from '../../shared/scenes/helpers.js';
+import { pedirConfirmacao, criarPassoConfirmacao } from '../../shared/scenes/confirmacao.js';
 
 const TAMANHO_PAGINA = 6;
 
@@ -11,26 +12,6 @@ const CATEGORIAS = {
   DESPESA: ['Alimentação', 'Transporte', 'Moradia', 'Contas', 'Saúde', 'Lazer', 'Compras', 'Outra'],
   RECEITA: ['Salário', 'Freelance', 'Vendas', 'Investimentos', 'Presente', 'Outra'],
 };
-
-// Encerra a scene se o usuário mandou /cancelar. Retorna true se cancelou.
-async function tentarCancelar(ctx) {
-  if (ctx.message?.text?.trim() === '/cancelar') {
-    await ctx.reply('❌ Operação cancelada.');
-    await ctx.scene.leave();
-    return true;
-  }
-  return false;
-}
-
-// Responde erro de negócio com a mensagem própria; erro inesperado com genérica.
-async function responderErro(ctx, err, acao) {
-  if (err instanceof ErroDeNegocio) {
-    await ctx.reply(`⚠️ ${err.message}`);
-  } else {
-    console.error(`[fluxoCaixa] Erro ao ${acao}:`, err);
-    await ctx.reply('⚠️ Algo deu errado. Tente novamente mais tarde.');
-  }
-}
 
 // Teclado de categorias (2 por linha), com callback pelo índice.
 function tecladoCategorias(categorias) {
@@ -50,13 +31,6 @@ function tecladoStatus() {
   ]);
 }
 
-// Teclado com os bancos disponíveis.
-function tecladoBancos(bancos) {
-  return Markup.inlineKeyboard(
-    bancos.map((b) => [Markup.button.callback(`${b.nome} — ${formatarBRL(b.saldo_atual)}`, `bank:${b.id}`)])
-  );
-}
-
 // Pergunta o vencimento e avança para o passo da data.
 async function perguntarData(ctx) {
   await ctx.reply('📅 Qual o vencimento? ("hoje" ou DD/MM)');
@@ -72,6 +46,27 @@ function montarResumo(r, descricao) {
       `${r.quantidade} lançamentos PENDENTES (a partir de ${venc}).`;
   }
   return `✅ ${tipoTxt} "${descricao}" de ${formatarBRL(r.valorParcela)} registrada (vence ${venc}, ${r.status}).`;
+}
+
+// Monta o resumo de confirmação de um lançamento a partir do estado do wizard.
+function montarResumoConfirmacao(st) {
+  const valor = parseValorBRL(st.valorRaw);
+  const tipoTxt = st.tipo === 'DESPESA' ? 'Despesa' : 'Receita';
+  const valorTxt =
+    st.numeroParcelas > 1
+      ? `${st.numeroParcelas}x de ${formatarBRL(valor)}`
+      : `${formatarBRL(valor)} (à vista)`;
+  const status = st.numeroParcelas > 1 ? 'PENDENTE' : st.status;
+  return [
+    '📝 Confira o lançamento:',
+    `• Tipo: ${tipoTxt}`,
+    `• Descrição: ${st.descricao}`,
+    `• Valor: ${valorTxt}`,
+    `• Categoria: ${st.categoria}`,
+    `• Vencimento: ${formatarData(parseData(st.dataRaw))}`,
+    `• Status: ${status}`,
+    `• Banco: ${st.bancoNome}`,
+  ].join('\n');
 }
 
 // Fábrica dos wizards de /gasto e /receita.
@@ -173,7 +168,8 @@ function criarWizardMovimentacao(sceneId, tipo) {
         await ctx.reply('⚠️ Cadastre um banco antes (use /addbanco).');
         return ctx.scene.leave();
       }
-      await ctx.reply('🏦 Qual banco?', tecladoBancos(bancos));
+      ctx.wizard.state.bancos = bancos;
+      await ctx.reply('🏦 Qual banco?', tecladoBancos(bancos, 'bank'));
       return ctx.wizard.next();
     },
 
@@ -186,12 +182,14 @@ function criarWizardMovimentacao(sceneId, tipo) {
         return;
       }
       await ctx.answerCbQuery();
-      ctx.wizard.state.bancoId = Number(data.slice(5));
+      const bancoId = Number(data.slice(5));
+      ctx.wizard.state.bancoId = bancoId;
+      ctx.wizard.state.bancoNome = ctx.wizard.state.bancos?.find((b) => b.id === bancoId)?.nome ?? '—';
       await ctx.reply('🔢 Quantas parcelas? (1 = à vista)');
       return ctx.wizard.next();
     },
 
-    // Recebe as parcelas, registra a movimentação.
+    // Recebe as parcelas, valida e pede confirmação.
     async (ctx) => {
       if (await tentarCancelar(ctx)) return;
       const n = Number(ctx.message?.text?.trim());
@@ -199,7 +197,12 @@ function criarWizardMovimentacao(sceneId, tipo) {
         await ctx.reply('❌ Número de parcelas inválido (1 a 60). Tente de novo (ou /cancelar).');
         return;
       }
+      ctx.wizard.state.numeroParcelas = n;
+      return pedirConfirmacao(ctx, montarResumoConfirmacao(ctx.wizard.state));
+    },
 
+    // Ao confirmar, registra a movimentação.
+    criarPassoConfirmacao(async (ctx) => {
       const st = ctx.wizard.state;
       try {
         const resultado = await fluxoService.registrarMovimentacao({
@@ -210,14 +213,13 @@ function criarWizardMovimentacao(sceneId, tipo) {
           dataRaw: st.dataRaw,
           status: st.status,
           bancoId: st.bancoId,
-          numeroParcelas: n,
+          numeroParcelas: st.numeroParcelas,
         });
         await ctx.reply(montarResumo(resultado, st.descricao));
       } catch (err) {
         await responderErro(ctx, err, 'registrar a movimentação');
       }
-      return ctx.scene.leave();
-    }
+    })
   );
 }
 

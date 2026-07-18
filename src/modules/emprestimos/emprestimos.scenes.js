@@ -3,33 +3,19 @@ import * as emprestimosService from './emprestimos.service.js';
 import * as bancosService from '../bancos/bancos.service.js';
 import { parseValorBRL, formatarBRL } from '../../shared/formatters/currency.js';
 import { parseData, formatarData } from '../../shared/formatters/date.js';
-import { ErroDeNegocio } from '../../shared/errors/ErroDeNegocio.js';
+import { tentarCancelar, responderErro, tecladoBancos } from '../../shared/scenes/helpers.js';
+import { pedirConfirmacao, criarPassoConfirmacao } from '../../shared/scenes/confirmacao.js';
 
-// Encerra a scene se o usuário mandou /cancelar. Retorna true se cancelou.
-async function tentarCancelar(ctx) {
-  if (ctx.message?.text?.trim() === '/cancelar') {
-    await ctx.reply('❌ Operação cancelada.');
-    await ctx.scene.leave();
-    return true;
-  }
-  return false;
-}
-
-// Responde erro de negócio com a mensagem própria; erro inesperado com genérica.
-async function responderErro(ctx, err, acao) {
-  if (err instanceof ErroDeNegocio) {
-    await ctx.reply(`⚠️ ${err.message}`);
-  } else {
-    console.error(`[emprestimos] Erro ao ${acao}:`, err);
-    await ctx.reply('⚠️ Algo deu errado. Tente novamente mais tarde.');
-  }
-}
-
-// Teclado com os bancos disponíveis, usando um prefixo de callback.
-function tecladoBancos(bancos, prefixo) {
-  return Markup.inlineKeyboard(
-    bancos.map((b) => [Markup.button.callback(`${b.nome} — ${formatarBRL(b.saldo_atual)}`, `${prefixo}:${b.id}`)])
-  );
+// Monta o resumo de confirmação de um empréstimo a partir do estado do wizard.
+function montarResumoEmprestimo(st) {
+  return [
+    '🤝 Confira o empréstimo:',
+    `• Devedor: ${st.devedor}`,
+    `• Saiu do bolso: ${formatarBRL(parseValorBRL(st.valorEmprestadoRaw))}`,
+    `• A receber: ${formatarBRL(parseValorBRL(st.valorAcordadoRaw))}`,
+    `• Vencimento: ${formatarData(parseData(st.dataRaw))}`,
+    `• Banco: ${st.bancoNome}`,
+  ].join('\n');
 }
 
 // Wizard de /emprestar: registra o empréstimo e debita do banco.
@@ -95,11 +81,12 @@ const emprestarScene = new Scenes.WizardScene(
       await ctx.reply('⚠️ Cadastre um banco antes (use /addbanco).');
       return ctx.scene.leave();
     }
+    ctx.wizard.state.bancos = bancos;
     await ctx.reply('🏦 De qual banco saiu o dinheiro?', tecladoBancos(bancos, 'bank'));
     return ctx.wizard.next();
   },
 
-  // Recebe o banco, registra o empréstimo.
+  // Recebe o banco e pede confirmação.
   async (ctx) => {
     if (await tentarCancelar(ctx)) return;
     const data = ctx.callbackQuery?.data;
@@ -108,7 +95,14 @@ const emprestarScene = new Scenes.WizardScene(
       return;
     }
     await ctx.answerCbQuery();
+    const bancoId = Number(data.slice(5));
+    ctx.wizard.state.bancoId = bancoId;
+    ctx.wizard.state.bancoNome = ctx.wizard.state.bancos?.find((b) => b.id === bancoId)?.nome ?? '—';
+    return pedirConfirmacao(ctx, montarResumoEmprestimo(ctx.wizard.state));
+  },
 
+  // Ao confirmar, registra o empréstimo.
+  criarPassoConfirmacao(async (ctx) => {
     const st = ctx.wizard.state;
     try {
       const emp = await emprestimosService.registrarEmprestimo({
@@ -116,7 +110,7 @@ const emprestarScene = new Scenes.WizardScene(
         valorEmprestadoRaw: st.valorEmprestadoRaw,
         valorAcordadoRaw: st.valorAcordadoRaw,
         dataRaw: st.dataRaw,
-        bancoId: Number(data.slice(5)),
+        bancoId: st.bancoId,
       });
       await ctx.reply(
         `✅ Empréstimo para ${emp.devedor} registrado: saiu ${formatarBRL(emp.valor_emprestado)}, ` +
@@ -125,8 +119,7 @@ const emprestarScene = new Scenes.WizardScene(
     } catch (err) {
       await responderErro(ctx, err, 'registrar o empréstimo');
     }
-    return ctx.scene.leave();
-  }
+  })
 );
 
 // Wizard de /quitaremprestimo: escolhe o empréstimo, o banco de entrada e credita.
