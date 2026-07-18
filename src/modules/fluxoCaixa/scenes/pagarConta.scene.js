@@ -5,10 +5,11 @@ import { formatarData } from '../../../shared/formatters/date.js';
 import { tentarCancelar } from '../../../shared/scenes/helpers.js';
 import { paginar } from './ui.js';
 
-// Cabeçalho da lista de pendentes.
+// Cabeçalho da lista de pendentes (com o total).
 function textoPendentes(contas, pagina) {
   const { p, totalPaginas } = paginar(contas, pagina);
-  return `🧾 Pendentes do mês (${contas.length}) — página ${p + 1}/${totalPaginas}\nToque para dar baixa:`;
+  const total = contas.reduce((soma, c) => soma + Number(c.valor), 0);
+  return `🧾 Pendentes do mês (${contas.length}) · Total ${formatarBRL(total)}\nPágina ${p + 1}/${totalPaginas} — toque para dar baixa:`;
 }
 
 // Teclado da página: botões de conta (só id no payload), navegação e concluir.
@@ -25,6 +26,7 @@ function tecladoPendentes(contas, pagina) {
   if (p < totalPaginas - 1) nav.push(Markup.button.callback('▶️', `pag:${p + 1}`));
   if (nav.length) linhas.push(nav);
 
+  linhas.push([Markup.button.callback('💸 Pagar todas', 'pagartodas')]);
   linhas.push([Markup.button.callback('✅ Concluir', 'fim')]);
   return Markup.inlineKeyboard(linhas);
 }
@@ -68,6 +70,38 @@ export const pagarContaScene = new Scenes.WizardScene(
       await ctx.answerCbQuery();
       const n = ctx.wizard.state.pagas;
       await ctx.editMessageText(n > 0 ? `Pronto! ${n} conta(s) quitada(s).` : 'Encerrado.');
+      return ctx.scene.leave();
+    }
+
+    if (data === 'pagartodas') {
+      await ctx.answerCbQuery();
+      const contas = ctx.wizard.state.contas;
+      const total = contas.reduce((soma, c) => soma + Number(c.valor), 0);
+      const teclado = Markup.inlineKeyboard([
+        [Markup.button.callback('✅ Confirmar', 'confirmar-todas'), Markup.button.callback('❌ Cancelar', 'cancelar-todas')],
+      ]);
+      await ctx.editMessageText(`Pagar todas as ${contas.length} conta(s) (${formatarBRL(total)})?`, teclado);
+      return;
+    }
+
+    if (data === 'cancelar-todas') {
+      await ctx.answerCbQuery();
+      return renderizar(ctx, ctx.wizard.state.contas, ctx.wizard.state.pagina);
+    }
+
+    if (data === 'confirmar-todas') {
+      await ctx.answerCbQuery();
+      let resultado;
+      try {
+        resultado = await fluxoService.pagarTodasDoMes();
+      } catch (err) {
+        console.error('[fluxoCaixa] Erro ao pagar todas:', err);
+        await ctx.editMessageText('⚠️ Erro ao pagar as contas.');
+        return ctx.scene.leave();
+      }
+      let msg = `✅ ${resultado.pagas} conta(s) quitada(s) (${formatarBRL(resultado.total)}).`;
+      if (resultado.falhou) msg += '\n⚠️ Parei numa falha — rode /pagarconta de novo para o resto.';
+      await ctx.editMessageText(msg);
       return ctx.scene.leave();
     }
 

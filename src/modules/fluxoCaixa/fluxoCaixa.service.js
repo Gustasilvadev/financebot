@@ -225,3 +225,27 @@ export async function excluirMovimentacao(id) {
 export async function listarCategoriasUsadas() {
   return fluxoRepository.listarCategorias();
 }
+
+// Paga todas as pendentes do mês.
+export async function pagarTodasDoMes() {
+  const pendentes = await listarPendentesDoMes();
+  let pagas = 0;
+  let total = 0;
+  let falhou = false;
+
+  for (const conta of pendentes) {
+    try {
+      const { jaEstavaPaga } = await pagarConta(conta.id);
+      if (!jaEstavaPaga) {
+        pagas += 1;
+        total += Number(conta.valor);
+      }
+    } catch (err) {
+      console.error('[fluxoCaixa] Erro ao pagar todas:', err);
+      falhou = true;
+      break;
+    }
+  }
+
+  return { pagas, total: Math.round(total * 100) / 100, falhou };
+}
