@@ -92,3 +92,10 @@ export async function excluir(id) {
   const { error } = await supabase.from(TABELA).delete().eq('id', id);
   if (error) throw error;
 }
+
+// Lista as categorias já usadas no histórico.
+export async function listarCategorias() {
+  const { data, error } = await supabase.from(TABELA).select('categoria');
+  if (error) throw error;
+  return [...new Set((data ?? []).map((r) => r.categoria).filter(Boolean))];
+}

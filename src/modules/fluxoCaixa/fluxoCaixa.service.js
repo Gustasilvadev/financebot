@@ -220,3 +220,8 @@ export async function excluirMovimentacao(id) {
   }
   return { mov, estorno, saldoAjustado, semBanco };
 }
+
+// Categorias já usadas no histórico.
+export async function listarCategoriasUsadas() {
+  return fluxoRepository.listarCategorias();
+}

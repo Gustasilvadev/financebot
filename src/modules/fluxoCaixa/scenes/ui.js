@@ -32,3 +32,12 @@ export function paginar(contas, pagina) {
   const itens = contas.slice(p * TAMANHO_PAGINA, p * TAMANHO_PAGINA + TAMANHO_PAGINA);
   return { itens, p, totalPaginas };
 }
+
+// Junta as categorias fixas com as já usadas no histórico ("Outra" fica por último).
+export function mesclarCategorias(tipo, usadas) {
+  const fixas = CATEGORIAS[tipo].filter((c) => c !== 'Outra');
+  const extras = [...new Set(usadas)]
+    .filter((c) => c && c !== 'Outra' && !fixas.includes(c))
+    .slice(0, 8);
+  return [...fixas, ...extras, 'Outra'];
+}

@@ -5,7 +5,7 @@ import { parseValorBRL, formatarBRL } from '../../../shared/formatters/currency.
 import { parseData, formatarData } from '../../../shared/formatters/date.js';
 import { tentarCancelar, responderErro, tecladoBancos } from '../../../shared/scenes/helpers.js';
 import { pedirConfirmacao, criarPassoConfirmacao } from '../../../shared/scenes/confirmacao.js';
-import { CATEGORIAS, tecladoCategorias, tecladoStatus } from './ui.js';
+import { mesclarCategorias, tecladoCategorias, tecladoStatus } from './ui.js';
 
 // Pergunta o vencimento e avança para o passo da data.
 async function perguntarData(ctx) {
@@ -47,7 +47,6 @@ function montarResumoConfirmacao(st) {
 
 // Fábrica dos wizards de /gasto e /receita.
 function criarWizardMovimentacao(sceneId, tipo) {
-  const categorias = CATEGORIAS[tipo];
   const rotuloTipo = tipo === 'DESPESA' ? 'despesa' : 'receita';
 
   return new Scenes.WizardScene(
@@ -82,7 +81,9 @@ function criarWizardMovimentacao(sceneId, tipo) {
         return;
       }
       ctx.wizard.state.valorRaw = ctx.message.text;
-      await ctx.reply('🏷️ Escolha a categoria:', tecladoCategorias(categorias));
+      const usadas = await fluxoService.listarCategoriasUsadas();
+      ctx.wizard.state.categorias = mesclarCategorias(tipo, usadas);
+      await ctx.reply('🏷️ Escolha a categoria:', tecladoCategorias(ctx.wizard.state.categorias));
       return ctx.wizard.next();
     },
 
@@ -106,7 +107,7 @@ function criarWizardMovimentacao(sceneId, tipo) {
         return;
       }
       await ctx.answerCbQuery();
-      const escolhida = categorias[Number(data.slice(4))];
+      const escolhida = ctx.wizard.state.categorias[Number(data.slice(4))];
       if (escolhida === 'Outra') {
         ctx.wizard.state.esperaCategoriaTexto = true;
         await ctx.reply('✏️ Digite a categoria:');

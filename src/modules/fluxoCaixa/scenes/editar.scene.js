@@ -4,7 +4,7 @@ import { parseValorBRL, formatarBRL } from '../../../shared/formatters/currency.
 import { parseData, formatarData } from '../../../shared/formatters/date.js';
 import { tentarCancelar, responderErro } from '../../../shared/scenes/helpers.js';
 import { pedirConfirmacao, criarPassoConfirmacao } from '../../../shared/scenes/confirmacao.js';
-import { CATEGORIAS, tecladoCategorias, tecladoStatus, paginar } from './ui.js';
+import { mesclarCategorias, tecladoCategorias, tecladoStatus, paginar } from './ui.js';
 
 const ROTULOS_CAMPO = {
   descricao: 'Descrição',
@@ -176,7 +176,9 @@ export const editarLancamentoScene = new Scenes.WizardScene(
     }
 
     if (campo === 'categoria') {
-      await ctx.reply('🏷️ Nova categoria:', tecladoCategorias(CATEGORIAS[mov.tipo]));
+      const usadas = await fluxoService.listarCategoriasUsadas();
+      ctx.wizard.state.categorias = mesclarCategorias(mov.tipo, usadas);
+      await ctx.reply('🏷️ Nova categoria:', tecladoCategorias(ctx.wizard.state.categorias));
     } else if (campo === 'status') {
       await ctx.reply('Novo status:', tecladoStatus());
     } else if (campo === 'data_vencimento') {
@@ -210,7 +212,7 @@ export const editarLancamentoScene = new Scenes.WizardScene(
           return;
         }
         await ctx.answerCbQuery();
-        const escolhida = CATEGORIAS[st.mov.tipo][Number(data.slice(4))];
+        const escolhida = st.categorias[Number(data.slice(4))];
         if (escolhida === 'Outra') {
           st.esperaCategoriaTexto = true;
           await ctx.reply('✏️ Digite a categoria:');
