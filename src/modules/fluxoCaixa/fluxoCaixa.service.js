@@ -169,6 +169,13 @@ export function receitasPorCategoria() {
   return movimentacoesPorCategoria('RECEITA');
 }
 
+// Soma as despesas do mês (pagas + pendentes) de uma categoria.
+export async function somarDespesasDoMes(categoria) {
+  const gastos = await gastosPorCategoria();
+  const achado = gastos.find((g) => g.categoria === categoria);
+  return achado ? achado.total : 0;
+}
+
 // Contribuição de uma movimentação ao saldo do banco (0 se pendente).
 export function efeitoNoSaldo(mov) {
   if (mov.status !== 'PAGO') return 0;

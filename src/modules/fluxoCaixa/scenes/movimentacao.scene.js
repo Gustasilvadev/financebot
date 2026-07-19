@@ -6,6 +6,16 @@ import { parseData, formatarData } from '../../../shared/formatters/date.js';
 import { tentarCancelar, responderErro, tecladoBancos } from '../../../shared/scenes/helpers.js';
 import { pedirConfirmacao, criarPassoConfirmacao } from '../../../shared/scenes/confirmacao.js';
 import { mesclarCategorias, tecladoCategorias, tecladoStatus } from './ui.js';
+import * as orcamentosService from '../../orcamentos/orcamentos.service.js';
+
+// Monta o alerta de orçamento de uma categoria (null se não há orçamento ou está ok).
+async function montarAlertaOrcamento(categoria) {
+  const c = await orcamentosService.verificarConsumo(categoria);
+  if (!c || c.nivel === 'ok') return null;
+  const emoji = c.nivel === 'estourado' ? '🔴' : '⚠️';
+  const rotulo = c.nivel === 'estourado' ? 'Orçamento estourado' : 'Perto do limite';
+  return `${emoji} ${rotulo} em "${c.categoria}": ${formatarBRL(c.gasto)} de ${formatarBRL(c.limite)} (${c.percentual}%).`;
+}
 
 // Pergunta o vencimento e avança para o passo da data.
 async function perguntarData(ctx) {
@@ -192,7 +202,17 @@ function criarWizardMovimentacao(sceneId, tipo) {
           bancoId: st.bancoId,
           numeroParcelas: st.numeroParcelas,
         });
-        await ctx.reply(montarResumo(resultado, st.descricao));
+
+        let msg = montarResumo(resultado, st.descricao);
+        if (st.tipo === 'DESPESA') {
+          try {
+            const alerta = await montarAlertaOrcamento(st.categoria);
+            if (alerta) msg += `\n\n${alerta}`;
+          } catch (e) {
+            console.error('[orcamentos] Falha ao montar alerta:', e);
+          }
+        }
+        await ctx.reply(msg);
       } catch (err) {
         await responderErro(ctx, err, 'registrar a movimentação');
       }
