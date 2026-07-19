@@ -30,3 +30,15 @@ export function tecladoBancos(bancos, prefixo) {
     ])
   );
 }
+
+// Teclado de categorias sugeridas (2 por linha, callback "cat:i") + opção "Outra" (cat:outra).
+export function tecladoCategoriasComOutra(cats) {
+  const linhas = [];
+  for (let i = 0; i < cats.length; i += 2) {
+    const linha = [Markup.button.callback(cats[i], `cat:${i}`)];
+    if (cats[i + 1]) linha.push(Markup.button.callback(cats[i + 1], `cat:${i + 1}`));
+    linhas.push(linha);
+  }
+  linhas.push([Markup.button.callback('✏️ Outra categoria', 'cat:outra')]);
+  return Markup.inlineKeyboard(linhas);
+}

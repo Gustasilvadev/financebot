@@ -1,20 +1,8 @@
 import { Scenes, Markup } from 'telegraf';
 import * as orcamentosService from './orcamentos.service.js';
 import { parseValorBRL, formatarBRL } from '../../shared/formatters/currency.js';
-import { tentarCancelar, responderErro } from '../../shared/scenes/helpers.js';
+import { tentarCancelar, responderErro, tecladoCategoriasComOutra } from '../../shared/scenes/helpers.js';
 import { pedirConfirmacao, criarPassoConfirmacao } from '../../shared/scenes/confirmacao.js';
-
-// Teclado das categorias sugeridas.
-function tecladoCategorias(cats) {
-  const linhas = [];
-  for (let i = 0; i < cats.length; i += 2) {
-    const linha = [Markup.button.callback(cats[i], `cat:${i}`)];
-    if (cats[i + 1]) linha.push(Markup.button.callback(cats[i + 1], `cat:${i + 1}`));
-    linhas.push(linha);
-  }
-  linhas.push([Markup.button.callback('✏️ Outra categoria', 'cat:outra')]);
-  return Markup.inlineKeyboard(linhas);
-}
 
 // Teclado com os orçamentos existentes (para apagar).
 function tecladoOrcamentos(orcamentos) {
@@ -33,7 +21,7 @@ const addOrcamentoScene = new Scenes.WizardScene(
   async (ctx) => {
     const cats = await orcamentosService.categoriasSugeridas();
     ctx.wizard.state.cats = cats;
-    await ctx.reply('🎯 Orçamento para qual categoria? (/cancelar para abortar)', tecladoCategorias(cats));
+    await ctx.reply('🎯 Orçamento para qual categoria? (/cancelar para abortar)', tecladoCategoriasComOutra(cats));
     return ctx.wizard.next();
   },
 
