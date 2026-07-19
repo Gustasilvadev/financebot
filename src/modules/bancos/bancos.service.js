@@ -2,8 +2,8 @@ import * as bancosRepository from './bancos.repository.js';
 import { parseValorBRL } from '../../shared/formatters/currency.js';
 import { ErroDeNegocio } from '../../shared/errors/ErroDeNegocio.js';
 
-const NOME_MAX = 100; // limite da coluna VARCHAR(100)
-const SALDO_MAX = 9999999999.99; // limite de DECIMAL(12,2)
+const NOME_MAX = 100;
+const SALDO_MAX = 9999999999.99;
 
 // Valida e normaliza o nome (obrigatório, até 100 caracteres).
 function validarNome(nomeRaw) {

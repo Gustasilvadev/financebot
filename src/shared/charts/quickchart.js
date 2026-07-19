@@ -16,7 +16,7 @@ function formatterRotulo(total, percentual) {
   return `function(v){${valor}var p=${total}>0?Math.round(v/${total}*100):0;return s+'  ('+p+'%)';}`;
 }
 
-// Monta a URL de um gráfico de barras horizontais.
+// Monta a URL de barras horizontais (config vai como texto JS, nao JSON, para preservar as funcoes de formatacao).
 export function urlBarras({ titulo, itens, percentual = true }) {
   const labels = itens.map((i) => i.label);
   const valores = itens.map((i) => i.valor);
@@ -24,7 +24,6 @@ export function urlBarras({ titulo, itens, percentual = true }) {
   const total = valores.reduce((s, v) => s + v, 0);
   const altura = Math.max(240, 90 + labels.length * 48);
 
-  // Config vai como texto JS para preservar as funções de formatação.
   const config = `{
     type: 'bar',
     data: {

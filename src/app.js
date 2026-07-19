@@ -22,7 +22,6 @@ export function configurarBot() {
   );
   bot.help((ctx) => ctx.reply(TEXTO_AJUDA));
 
-  // Módulos de negócio (novos pilares entram aqui).
   registrarBancos(bot);
   registrarFluxoCaixa(bot);
   registrarEmprestimos(bot);
@@ -31,7 +30,6 @@ export function configurarBot() {
   registrarRecorrencias(bot);
   registrarMetas(bot);
 
-  // Captura erros não tratados dentro dos handlers.
   bot.catch((err, ctx) => {
     console.error(`[BOT] Erro ao processar update "${ctx.updateType}":`, err);
     ctx.reply('⚠️ Ops, algo deu errado ao processar sua solicitação.').catch(() => {});

@@ -52,7 +52,6 @@ export async function registrarEmprestimo(dados) {
     status: 'ATIVO',
   });
 
-  // Debita o que saiu do bolso.
   await bancosService.ajustarSaldo(bancoId, -valorEmprestado);
 
   return emprestimo;

@@ -130,9 +130,7 @@ export const editarLancamentoScene = new Scenes.WizardScene(
           textoLancamentos(ctx.wizard.state.movs, ctx.wizard.state.pagina),
           tecladoLancamentos(ctx.wizard.state.movs, ctx.wizard.state.pagina)
         );
-      } catch {
-        // ignora "mensagem não modificada"
-      }
+      } catch {}
       return;
     }
 

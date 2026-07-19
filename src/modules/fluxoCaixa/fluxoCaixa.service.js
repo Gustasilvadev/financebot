@@ -83,7 +83,6 @@ export async function registrarMovimentacao(dados) {
   linhas[0].status = status;
   const criadas = await fluxoRepository.criarVarias(linhas);
 
-  // Ajusta o saldo apenas quando à vista e já pago.
   if (numeroParcelas === 1 && status === 'PAGO') {
     await bancosService.ajustarSaldo(bancoId, deltaSaldo(tipo, valor));
   }

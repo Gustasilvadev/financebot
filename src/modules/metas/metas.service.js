@@ -68,7 +68,7 @@ export async function guardar(metaId, bancoId, valorRaw) {
   try {
     atualizada = await metasRepository.atualizarSaldoGuardado(metaId, arred(Number(meta.saldo_guardado) + valor));
   } catch (err) {
-    await bancosService.ajustarSaldo(bancoId, valor); // compensa: devolve ao banco
+    await bancosService.ajustarSaldo(bancoId, valor);
     throw err;
   }
 
@@ -91,7 +91,7 @@ export async function resgatar(metaId, bancoId, valorRaw) {
   try {
     await bancosService.ajustarSaldo(bancoId, valor);
   } catch (err) {
-    await metasRepository.atualizarSaldoGuardado(metaId, Number(meta.saldo_guardado)); // compensa: devolve à caixinha
+    await metasRepository.atualizarSaldoGuardado(metaId, Number(meta.saldo_guardado));
     throw err;
   }
 

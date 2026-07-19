@@ -85,7 +85,7 @@ export async function materializarDoDia() {
 
   for (const rec of ativas) {
     const dataVencimento = dataDoMesComDia(rec.dia_vencimento);
-    if (hoje < dataVencimento) continue; // ainda não chegou o vencimento deste mês
+    if (hoje < dataVencimento) continue;
     const movimentacao = await fluxoService.criarDeRecorrenciaSeInexistente(rec, dataVencimento);
     if (movimentacao) criadas.push({ recorrencia: rec, movimentacao });
   }

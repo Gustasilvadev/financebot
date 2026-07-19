@@ -35,9 +35,7 @@ function tecladoPendentes(contas, pagina) {
 async function renderizar(ctx, contas, pagina) {
   try {
     await ctx.editMessageText(textoPendentes(contas, pagina), tecladoPendentes(contas, pagina));
-  } catch {
-    // Erros benignos do Telegram (ex.: mensagem não modificada) são ignorados.
-  }
+  } catch {}
 }
 
 export const pagarContaScene = new Scenes.WizardScene(
@@ -126,7 +124,6 @@ export const pagarContaScene = new Scenes.WizardScene(
         return;
       }
 
-      // Re-consulta (a conta paga sai da lista) e re-renderiza.
       const contas = await fluxoService.listarPendentesDoMes();
       if (contas.length === 0) {
         await ctx.editMessageText(`Pronto! ${ctx.wizard.state.pagas} conta(s) quitada(s). Nada mais pendente. 🎉`);
