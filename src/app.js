@@ -8,6 +8,7 @@ import { registrarEmprestimos } from './modules/emprestimos/emprestimos.commands
 import { registrarGraficos } from './modules/graficos/graficos.commands.js';
 import { registrarOrcamentos } from './modules/orcamentos/orcamentos.commands.js';
 import { registrarRecorrencias } from './modules/recorrencias/recorrencias.commands.js';
+import { registrarMetas } from './modules/metas/metas.commands.js';
 import { TEXTO_AJUDA } from './core/menu.js';
 
 // Monta o bot: middlewares, handlers base, módulos e tratamento global de erro.
@@ -28,6 +29,7 @@ export function configurarBot() {
   registrarGraficos(bot);
   registrarOrcamentos(bot);
   registrarRecorrencias(bot);
+  registrarMetas(bot);
 
   // Captura erros não tratados dentro dos handlers.
   bot.catch((err, ctx) => {

@@ -24,6 +24,12 @@ const COMANDOS = [
   { command: 'emprestar', description: 'Registrar um empréstimo' },
   { command: 'emprestimos', description: 'Empréstimos a receber' },
   { command: 'quitaremprestimo', description: 'Dar baixa em um empréstimo' },
+  { command: 'metas', description: 'Caixinhas e progresso das metas' },
+  { command: 'addmeta', description: 'Criar uma caixinha' },
+  { command: 'guardar', description: 'Guardar dinheiro numa caixinha' },
+  { command: 'resgatar', description: 'Resgatar de uma caixinha' },
+  { command: 'apagarmeta', description: 'Remover uma caixinha' },
+  { command: 'patrimonio', description: 'Total: bancos + caixinhas' },
   { command: 'help', description: 'Ajuda e lista de comandos' },
 ];
 
@@ -64,6 +70,14 @@ export const TEXTO_AJUDA = [
   '• /emprestar — registrar empréstimo',
   '• /emprestimos — a receber',
   '• /quitaremprestimo — dar baixa',
+  '',
+  '🐷 Caixinhas (metas)',
+  '• /metas — progresso das caixinhas',
+  '• /addmeta — criar caixinha',
+  '• /guardar — guardar dinheiro',
+  '• /resgatar — resgatar dinheiro',
+  '• /apagarmeta — remover caixinha',
+  '• /patrimonio — bancos + caixinhas',
   '',
   'ℹ️ Dentro de um cadastro, /cancelar aborta.',
 ].join('\n');
