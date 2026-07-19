@@ -1,7 +1,7 @@
 import * as emprestimosRepository from './emprestimos.repository.js';
 import * as bancosService from '../bancos/bancos.service.js';
 import { parseValorBRL } from '../../shared/formatters/currency.js';
-import { parseData, hojeISO } from '../../shared/formatters/date.js';
+import { parseData, hojeISO, intervaloDoMes } from '../../shared/formatters/date.js';
 import { ErroDeNegocio } from '../../shared/errors/ErroDeNegocio.js';
 
 const DEVEDOR_MAX = 100;
@@ -73,7 +73,7 @@ export async function quitarEmprestimo(id, bancoId) {
   if (emprestimo.status === 'QUITADO') return { emprestimo, jaQuitado: true };
 
   await bancosService.buscarBanco(bancoId);
-  const quitado = await emprestimosRepository.marcarComoQuitado(id);
+  const quitado = await emprestimosRepository.marcarComoQuitado(id, hojeISO());
   await bancosService.ajustarSaldo(bancoId, Number(quitado.valor_acordado));
 
   return { emprestimo: quitado, jaQuitado: false };
@@ -82,4 +82,12 @@ export async function quitarEmprestimo(id, bancoId) {
 // Lista os empréstimos que vencem hoje (para as notificações).
 export async function listarVencendoHoje() {
   return emprestimosRepository.listarVencendoEm(hojeISO());
+}
+
+// Lucro realizado com empréstimos quitados no mês atual (valor_acordado - valor_emprestado).
+export async function lucroRealizadoNoMes() {
+  const { inicio, fim } = intervaloDoMes();
+  const quitados = await emprestimosRepository.listarQuitadosNoMes(inicio, fim);
+  const lucro = quitados.reduce((s, e) => s + (Number(e.valor_acordado) - Number(e.valor_emprestado)), 0);
+  return Math.round(lucro * 100) / 100;
 }

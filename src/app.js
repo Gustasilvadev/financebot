@@ -5,6 +5,7 @@ import { stage } from './core/stage.js';
 import { registrarBancos } from './modules/bancos/bancos.commands.js';
 import { registrarFluxoCaixa } from './modules/fluxoCaixa/fluxoCaixa.commands.js';
 import { registrarEmprestimos } from './modules/emprestimos/emprestimos.commands.js';
+import { registrarGraficos } from './modules/graficos/graficos.commands.js';
 import { TEXTO_AJUDA } from './core/menu.js';
 
 // Monta o bot: middlewares, handlers base, módulos e tratamento global de erro.
@@ -22,6 +23,7 @@ export function configurarBot() {
   registrarBancos(bot);
   registrarFluxoCaixa(bot);
   registrarEmprestimos(bot);
+  registrarGraficos(bot);
 
   // Captura erros não tratados dentro dos handlers.
   bot.catch((err, ctx) => {

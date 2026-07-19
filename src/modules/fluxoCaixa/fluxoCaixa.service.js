@@ -143,6 +143,32 @@ export async function balancoDoMes() {
   };
 }
 
+async function movimentacoesPorCategoria(tipo) {
+  const { inicio, fim } = intervaloDoMes();
+  const movs = await fluxoRepository.listarDoMes(inicio, fim);
+
+  const somas = new Map();
+  for (const m of movs) {
+    if (m.tipo !== tipo) continue;
+    const cat = m.categoria || 'Geral';
+    somas.set(cat, (somas.get(cat) ?? 0) + Number(m.valor));
+  }
+
+  return [...somas.entries()]
+    .map(([categoria, total]) => ({ categoria, total: Math.round(total * 100) / 100 }))
+    .sort((a, b) => b.total - a.total);
+}
+
+// Despesas do mês por categoria (pagas + pendentes).
+export function gastosPorCategoria() {
+  return movimentacoesPorCategoria('DESPESA');
+}
+
+// Receitas do mês por categoria.
+export function receitasPorCategoria() {
+  return movimentacoesPorCategoria('RECEITA');
+}
+
 // Contribuição de uma movimentação ao saldo do banco (0 se pendente).
 export function efeitoNoSaldo(mov) {
   if (mov.status !== 'PAGO') return 0;

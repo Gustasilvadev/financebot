@@ -28,17 +28,30 @@ export async function buscarPorId(id) {
   return data;
 }
 
-// Marca um empréstimo como QUITADO e retorna o registro atualizado.
-export async function marcarComoQuitado(id) {
+// Marca um empréstimo como QUITADO e retorna o registro.
+export async function marcarComoQuitado(id, dataQuitacao) {
   const { data, error } = await supabase
     .from(TABELA)
-    .update({ status: 'QUITADO' })
+    .update({ status: 'QUITADO', data_quitacao: dataQuitacao })
     .eq('id', id)
     .select()
     .single();
 
   if (error) throw error;
   return data;
+}
+
+// Lista os empréstimos quitados dentro do intervalo (por data de quitação).
+export async function listarQuitadosNoMes(inicio, fim) {
+  const { data, error } = await supabase
+    .from(TABELA)
+    .select('*')
+    .eq('status', 'QUITADO')
+    .gte('data_quitacao', inicio)
+    .lte('data_quitacao', fim);
+
+  if (error) throw error;
+  return data ?? [];
 }
 
 // Lista os empréstimos ativos que vencem na data informada.
