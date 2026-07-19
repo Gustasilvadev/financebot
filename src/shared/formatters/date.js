@@ -47,6 +47,13 @@ export function intervaloDoMes(iso = hojeISO()) {
   return { inicio: `${ano}-${pad(mes)}-01`, fim: `${ano}-${pad(mes)}-${pad(ultimoDia)}` };
 }
 
+// Data do mês corrente com o dia informado, limitada ao último dia do mês (ex.: 31 em fev -> 28/29).
+export function dataDoMesComDia(dia, iso = hojeISO()) {
+  const [ano, mes] = iso.split('-').map(Number);
+  const ultimoDia = new Date(Date.UTC(ano, mes, 0)).getUTCDate();
+  return `${ano}-${pad(mes)}-${pad(Math.min(dia, ultimoDia))}`;
+}
+
 // Rótulo do mês em pt-BR, ex.: "Julho/2026".
 export function rotuloDoMes(iso = hojeISO()) {
   const [ano, mes] = iso.split('-').map(Number);

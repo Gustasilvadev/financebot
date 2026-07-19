@@ -176,6 +176,26 @@ export async function somarDespesasDoMes(categoria) {
   return achado ? achado.total : 0;
 }
 
+// Cria a movimentação PENDENTE de uma recorrência, se ainda não existir neste mês (idempotência).
+export async function criarDeRecorrenciaSeInexistente(rec, dataVencimento) {
+  const { inicio, fim } = intervaloDoMes();
+  if (await fluxoRepository.existeDaRecorrenciaNoMes(rec.id, inicio, fim)) return null;
+
+  const [criada] = await fluxoRepository.criarVarias([
+    {
+      descricao: rec.descricao,
+      valor: Number(rec.valor),
+      tipo: rec.tipo,
+      categoria: rec.categoria || 'Geral',
+      status: 'PENDENTE',
+      data_vencimento: dataVencimento,
+      banco_id: rec.banco_id,
+      recorrencia_id: rec.id,
+    },
+  ]);
+  return criada;
+}
+
 // Contribuição de uma movimentação ao saldo do banco (0 se pendente).
 export function efeitoNoSaldo(mov) {
   if (mov.status !== 'PAGO') return 0;

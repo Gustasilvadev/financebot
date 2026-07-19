@@ -99,3 +99,17 @@ export async function listarCategorias() {
   if (error) throw error;
   return [...new Set((data ?? []).map((r) => r.categoria).filter(Boolean))];
 }
+
+// Indica se já existe movimentação de uma recorrência no intervalo (idempotência).
+export async function existeDaRecorrenciaNoMes(recorrenciaId, inicio, fim) {
+  const { data, error } = await supabase
+    .from(TABELA)
+    .select('id')
+    .eq('recorrencia_id', recorrenciaId)
+    .gte('data_vencimento', inicio)
+    .lte('data_vencimento', fim)
+    .limit(1);
+
+  if (error) throw error;
+  return (data ?? []).length > 0;
+}

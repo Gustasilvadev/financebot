@@ -28,7 +28,7 @@ export function iniciarServidorHttp() {
 
     try {
       if (rota === '/cron/notificar') {
-        const resultado = await notificationService.notificarVencimentosDeHoje();
+        const resultado = await notificationService.rotinaDiaria();
         res.writeHead(200).end(JSON.stringify(resultado));
       } else {
         await notificationService.manterVivo();
