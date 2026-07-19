@@ -1,7 +1,7 @@
 {
   "name": "financebot",
-  "version": "1.0.0",
-  "description": "Bot de finanças pessoais no Telegram (Bancos, Fluxo de Caixa e Empréstimos) com Node.js, Telegraf e Supabase.",
+  "version": "2.0.0",
+  "description": "Bot de finanças pessoais no Telegram (bancos, fluxo de caixa, empréstimos, gráficos, orçamentos, recorrências e metas) com Node.js, Telegraf e Supabase.",
   "type": "module",
   "main": "index.js",
   "scripts": {
