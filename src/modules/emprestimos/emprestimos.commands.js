@@ -4,8 +4,8 @@ import { formatarData } from '../../shared/formatters/date.js';
 
 // Registra os comandos do módulo Empréstimos no bot.
 export function registrarEmprestimos(bot) {
-  bot.command('emprestar', (ctx) => ctx.scene.enter('emprestar'));
-  bot.command('quitaremprestimo', (ctx) => ctx.scene.enter('quitar-emprestimo'));
+  bot.command('novo_emprestimo', (ctx) => ctx.scene.enter('emprestar'));
+  bot.command('quitar_emprestimo', (ctx) => ctx.scene.enter('quitar-emprestimo'));
 
   // /emprestimos — lista os ativos e o total a receber.
   bot.command('emprestimos', async (ctx) => {

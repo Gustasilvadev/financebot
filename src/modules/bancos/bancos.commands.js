@@ -9,7 +9,7 @@ export function registrarBancos(bot) {
     try {
       const { bancos } = await bancosService.listarComTotal();
       if (bancos.length === 0) {
-        return ctx.reply('Você ainda não tem bancos cadastrados. Use /addbanco para começar.');
+        return ctx.reply('Você ainda não tem bancos cadastrados. Use /novo_banco para começar.');
       }
       const guardadoPorBanco = await metasService.saldoGuardadoPorBanco();
 
@@ -37,7 +37,7 @@ export function registrarBancos(bot) {
     }
   });
 
-  bot.command('addbanco', (ctx) => ctx.scene.enter('add-banco'));
-  bot.command('atualizarsaldo', (ctx) => ctx.scene.enter('atualizar-saldo'));
-  bot.command('apagarbanco', (ctx) => ctx.scene.enter('apagar-banco'));
+  bot.command('novo_banco', (ctx) => ctx.scene.enter('add-banco'));
+  bot.command('atualizar_saldo', (ctx) => ctx.scene.enter('atualizar-saldo'));
+  bot.command('apagar_banco', (ctx) => ctx.scene.enter('apagar-banco'));
 }

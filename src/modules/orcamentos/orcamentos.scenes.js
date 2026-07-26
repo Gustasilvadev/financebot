@@ -13,7 +13,7 @@ function tecladoOrcamentos(orcamentos) {
   );
 }
 
-// Wizard de /addorcamento: escolhe a categoria, informa o limite, confirma e salva.
+// Wizard de /novo_orcamento: escolhe a categoria, informa o limite, confirma e salva.
 const addOrcamentoScene = new Scenes.WizardScene(
   'add-orcamento',
 
@@ -85,7 +85,7 @@ const addOrcamentoScene = new Scenes.WizardScene(
   })
 );
 
-// Wizard de /apagarorcamento: escolhe o orçamento, confirma e exclui.
+// Wizard de /apagar_orcamento: escolhe o orçamento, confirma e exclui.
 const apagarOrcamentoScene = new Scenes.WizardScene(
   'apagar-orcamento',
 
@@ -93,7 +93,7 @@ const apagarOrcamentoScene = new Scenes.WizardScene(
   async (ctx) => {
     const orcamentos = await orcamentosService.listar();
     if (orcamentos.length === 0) {
-      await ctx.reply('Você não tem orçamentos cadastrados. Use /addorcamento.');
+      await ctx.reply('Você não tem orçamentos cadastrados. Use /novo_orcamento.');
       return ctx.scene.leave();
     }
     ctx.wizard.state.orcamentos = orcamentos;
@@ -115,7 +115,7 @@ const apagarOrcamentoScene = new Scenes.WizardScene(
     const id = Number(data.slice(4));
     const orcamento = ctx.wizard.state.orcamentos.find((o) => o.id === id);
     if (!orcamento) {
-      await ctx.reply('⚠️ Orçamento não encontrado. Recomece com /apagarorcamento.');
+      await ctx.reply('⚠️ Orçamento não encontrado. Recomece com /apagar_orcamento.');
       return ctx.scene.leave();
     }
     ctx.wizard.state.orcamento = orcamento;

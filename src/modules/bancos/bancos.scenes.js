@@ -5,7 +5,7 @@ import { parseValorBRL, formatarBRL } from '../../shared/formatters/currency.js'
 import { tentarCancelar, responderErro, tecladoBancos } from '../../shared/scenes/helpers.js';
 import { pedirConfirmacao, criarPassoConfirmacao } from '../../shared/scenes/confirmacao.js';
 
-// Wizard de /addbanco: pergunta nome e saldo inicial, confirma e cria o banco.
+// Wizard de /novo_banco: pergunta nome e saldo inicial, confirma e cria o banco.
 const addBancoScene = new Scenes.WizardScene(
   'add-banco',
 
@@ -60,7 +60,7 @@ const addBancoScene = new Scenes.WizardScene(
   })
 );
 
-// Wizard de /atualizarsaldo: escolhe o banco, confirma e substitui o saldo.
+// Wizard de /atualizar_saldo: escolhe o banco, confirma e substitui o saldo.
 const atualizarSaldoScene = new Scenes.WizardScene(
   'atualizar-saldo',
 
@@ -68,7 +68,7 @@ const atualizarSaldoScene = new Scenes.WizardScene(
   async (ctx) => {
     const { bancos } = await bancosService.listarComTotal();
     if (bancos.length === 0) {
-      await ctx.reply('Você ainda não tem bancos cadastrados. Use /addbanco primeiro.');
+      await ctx.reply('Você ainda não tem bancos cadastrados. Use /novo_banco primeiro.');
       return ctx.scene.leave();
     }
 
@@ -91,7 +91,7 @@ const atualizarSaldoScene = new Scenes.WizardScene(
     const id = Number(data.slice(4));
     const banco = ctx.wizard.state.bancos.find((b) => b.id === id);
     if (!banco) {
-      await ctx.reply('⚠️ Banco não encontrado. Recomece com /atualizarsaldo.');
+      await ctx.reply('⚠️ Banco não encontrado. Recomece com /atualizar_saldo.');
       return ctx.scene.leave();
     }
 
@@ -139,7 +139,7 @@ const atualizarSaldoScene = new Scenes.WizardScene(
   })
 );
 
-// Wizard de /apagarbanco: escolhe o banco, confirma e exclui.
+// Wizard de /apagar_banco: escolhe o banco, confirma e exclui.
 const apagarBancoScene = new Scenes.WizardScene(
   'apagar-banco',
 
@@ -170,7 +170,7 @@ const apagarBancoScene = new Scenes.WizardScene(
     const id = Number(data.slice(4));
     const banco = ctx.wizard.state.bancos.find((b) => b.id === id);
     if (!banco) {
-      await ctx.reply('⚠️ Banco não encontrado. Recomece com /apagarbanco.');
+      await ctx.reply('⚠️ Banco não encontrado. Recomece com /apagar_banco.');
       return ctx.scene.leave();
     }
 

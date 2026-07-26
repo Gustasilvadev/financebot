@@ -152,7 +152,7 @@ function criarWizardMovimentacao(sceneId, tipo) {
 
       const { bancos } = await bancosService.listarComTotal();
       if (bancos.length === 0) {
-        await ctx.reply('⚠️ Cadastre um banco antes (use /addbanco).');
+        await ctx.reply('⚠️ Cadastre um banco antes (use /novo_banco).');
         return ctx.scene.leave();
       }
       ctx.wizard.state.bancos = bancos;

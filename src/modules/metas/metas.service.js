@@ -24,10 +24,10 @@ function validarValorPositivo(raw) {
   return valor;
 }
 
-// Busca uma meta ou lança erro de negócio.
+// Busca uma caixinha ou lança erro de negócio.
 export async function buscarMeta(id) {
   const meta = await metasRepository.buscarPorId(id);
-  if (!meta) throw new ErroDeNegocio('Meta não encontrada.');
+  if (!meta) throw new ErroDeNegocio('Caixinha não encontrada.');
   return meta;
 }
 
@@ -136,11 +136,11 @@ export async function registrarRendimento(metaId, valorRaw) {
   return { meta: atualizada, rendimento };
 }
 
-// Exclui uma meta (bloqueia se ainda houver saldo guardado).
+// Exclui uma caixinha (bloqueia se ainda houver saldo guardado).
 export async function excluir(id) {
   const meta = await buscarMeta(id);
   if (Number(meta.saldo_guardado) > 0) {
-    throw new ErroDeNegocio(`A meta "${meta.nome}" ainda tem ${formatarBRL(meta.saldo_guardado)} guardado. Resgate antes de apagar.`);
+    throw new ErroDeNegocio(`A caixinha "${meta.nome}" ainda tem ${formatarBRL(meta.saldo_guardado)} guardado. Resgate antes de apagar.`);
   }
   await metasRepository.excluir(id);
   return meta;

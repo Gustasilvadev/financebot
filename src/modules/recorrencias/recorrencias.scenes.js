@@ -40,7 +40,7 @@ function montarResumo(st) {
   ].join('\n');
 }
 
-// Wizard de /addrecorrencia: descrição → valor → tipo → categoria → dia → banco → confirma.
+// Wizard de /nova_recorrencia: descrição → valor → tipo → categoria → dia → banco → confirma.
 const addRecorrenciaScene = new Scenes.WizardScene(
   'add-recorrencia',
 
@@ -129,7 +129,7 @@ const addRecorrenciaScene = new Scenes.WizardScene(
 
     const { bancos } = await bancosService.listarComTotal();
     if (bancos.length === 0) {
-      await ctx.reply('⚠️ Cadastre um banco antes (use /addbanco).');
+      await ctx.reply('⚠️ Cadastre um banco antes (use /novo_banco).');
       return ctx.scene.leave();
     }
     ctx.wizard.state.bancos = bancos;
@@ -169,14 +169,14 @@ const addRecorrenciaScene = new Scenes.WizardScene(
   })
 );
 
-// Wizard de /pausarrecorrencia: liga/desliga uma recorrência (reversível, sem confirmação).
+// Wizard de /pausar_recorrencia: liga/desliga uma recorrência (reversível, sem confirmação).
 const pausarRecorrenciaScene = new Scenes.WizardScene(
   'pausar-recorrencia',
 
   async (ctx) => {
     const recorrencias = await recorrenciasService.listar();
     if (recorrencias.length === 0) {
-      await ctx.reply('Você não tem recorrências. Use /addrecorrencia.');
+      await ctx.reply('Você não tem recorrências. Use /nova_recorrencia.');
       return ctx.scene.leave();
     }
     ctx.wizard.state.recorrencias = recorrencias;
@@ -202,7 +202,7 @@ const pausarRecorrenciaScene = new Scenes.WizardScene(
   }
 );
 
-// Wizard de /apagarrecorrencia: escolhe, confirma e exclui.
+// Wizard de /apagar_recorrencia: escolhe, confirma e exclui.
 const apagarRecorrenciaScene = new Scenes.WizardScene(
   'apagar-recorrencia',
 
@@ -228,7 +228,7 @@ const apagarRecorrenciaScene = new Scenes.WizardScene(
     const id = Number(data.slice(4));
     const rec = ctx.wizard.state.recorrencias.find((r) => r.id === id);
     if (!rec) {
-      await ctx.reply('⚠️ Recorrência não encontrada. Recomece com /apagarrecorrencia.');
+      await ctx.reply('⚠️ Recorrência não encontrada. Recomece com /apagar_recorrencia.');
       return ctx.scene.leave();
     }
     ctx.wizard.state.rec = rec;

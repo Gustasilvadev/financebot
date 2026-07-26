@@ -30,7 +30,7 @@ function montarRespostaEmprestimo(r) {
     `a receber ${formatarBRL(r.valorAcordado)} até ${formatarData(r.primeiroVencimento)}.`;
 }
 
-// Wizard de /emprestar: registra o empréstimo e debita do banco.
+// Wizard de /novo_emprestimo: registra o empréstimo e debita do banco.
 const emprestarScene = new Scenes.WizardScene(
   'emprestar',
 
@@ -90,7 +90,7 @@ const emprestarScene = new Scenes.WizardScene(
 
     const { bancos } = await bancosService.listarComTotal();
     if (bancos.length === 0) {
-      await ctx.reply('⚠️ Cadastre um banco antes (use /addbanco).');
+      await ctx.reply('⚠️ Cadastre um banco antes (use /novo_banco).');
       return ctx.scene.leave();
     }
     ctx.wizard.state.bancos = bancos;
@@ -145,7 +145,7 @@ const emprestarScene = new Scenes.WizardScene(
   })
 );
 
-// Wizard de /quitaremprestimo: escolhe o empréstimo, o banco de entrada e credita.
+// Wizard de /quitar_emprestimo: escolhe o empréstimo, o banco de entrada e credita.
 const quitarEmprestimoScene = new Scenes.WizardScene(
   'quitar-emprestimo',
 
@@ -178,7 +178,7 @@ const quitarEmprestimoScene = new Scenes.WizardScene(
 
     const { bancos } = await bancosService.listarComTotal();
     if (bancos.length === 0) {
-      await ctx.reply('⚠️ Cadastre um banco antes (use /addbanco).');
+      await ctx.reply('⚠️ Cadastre um banco antes (use /novo_banco).');
       return ctx.scene.leave();
     }
     await ctx.reply('🏦 Em qual banco o dinheiro entrou?', tecladoBancos(bancos, 'bank'));

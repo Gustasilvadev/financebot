@@ -10,15 +10,15 @@ function linhaRecorrencia(r) {
 
 // Registra os comandos do módulo Recorrências no bot.
 export function registrarRecorrencias(bot) {
-  bot.command('addrecorrencia', (ctx) => ctx.scene.enter('add-recorrencia'));
-  bot.command('pausarrecorrencia', (ctx) => ctx.scene.enter('pausar-recorrencia'));
-  bot.command('apagarrecorrencia', (ctx) => ctx.scene.enter('apagar-recorrencia'));
+  bot.command('nova_recorrencia', (ctx) => ctx.scene.enter('add-recorrencia'));
+  bot.command('pausar_recorrencia', (ctx) => ctx.scene.enter('pausar-recorrencia'));
+  bot.command('apagar_recorrencia', (ctx) => ctx.scene.enter('apagar-recorrencia'));
 
   bot.command('recorrencias', async (ctx) => {
     try {
       const lista = await recorrenciasService.listar();
       if (lista.length === 0) {
-        return ctx.reply('🔁 Nenhuma recorrência cadastrada. Use /addrecorrencia.');
+        return ctx.reply('🔁 Nenhuma recorrência cadastrada. Use /nova_recorrencia.');
       }
       await ctx.reply(`🔁 Recorrências\n\n${lista.map(linhaRecorrencia).join('\n')}`);
     } catch (err) {

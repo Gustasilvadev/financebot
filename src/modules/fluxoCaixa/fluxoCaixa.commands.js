@@ -5,7 +5,7 @@ import { formatarBRL } from '../../shared/formatters/currency.js';
 export function registrarFluxoCaixa(bot) {
   bot.command('gasto', (ctx) => ctx.scene.enter('add-gasto'));
   bot.command('receita', (ctx) => ctx.scene.enter('add-receita'));
-  bot.command('pagarconta', (ctx) => ctx.scene.enter('pagar-conta'));
+  bot.command('pagar_conta', (ctx) => ctx.scene.enter('pagar-conta'));
   bot.command('editar', (ctx) => ctx.scene.enter('editar-lancamento'));
 
   // /mes — balanço do mês atual.

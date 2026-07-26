@@ -15,14 +15,14 @@ function linhaConsumo(c) {
 
 // Registra os comandos do módulo Orçamentos no bot.
 export function registrarOrcamentos(bot) {
-  bot.command('addorcamento', (ctx) => ctx.scene.enter('add-orcamento'));
-  bot.command('apagarorcamento', (ctx) => ctx.scene.enter('apagar-orcamento'));
+  bot.command('novo_orcamento', (ctx) => ctx.scene.enter('add-orcamento'));
+  bot.command('apagar_orcamento', (ctx) => ctx.scene.enter('apagar-orcamento'));
 
   bot.command('orcamentos', async (ctx) => {
     try {
       const itens = await orcamentosService.listarComConsumo();
       if (itens.length === 0) {
-        return ctx.reply('🎯 Nenhum orçamento cadastrado ainda. Use /addorcamento.');
+        return ctx.reply('🎯 Nenhum orçamento cadastrado ainda. Use /novo_orcamento.');
       }
       await ctx.reply(`🎯 Orçamentos do mês\n\n${itens.map(linhaConsumo).join('\n')}`);
     } catch (err) {

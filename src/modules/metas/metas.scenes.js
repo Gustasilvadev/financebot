@@ -14,7 +14,7 @@ function tecladoMetas(metas, prefixo) {
   );
 }
 
-// Wizard de /addmeta: nome → objetivo → banco → confirma → cria.
+// Wizard de /nova_caixinha: nome → objetivo → banco → confirma → cria.
 const addMetaScene = new Scenes.WizardScene(
   'add-meta',
 
@@ -46,7 +46,7 @@ const addMetaScene = new Scenes.WizardScene(
 
     const { bancos } = await bancosService.listarComTotal();
     if (bancos.length === 0) {
-      await ctx.reply('⚠️ Cadastre um banco antes (use /addbanco).');
+      await ctx.reply('⚠️ Cadastre um banco antes (use /novo_banco).');
       return ctx.scene.leave();
     }
     ctx.wizard.state.bancos = bancos;
@@ -93,7 +93,7 @@ function criarWizardTransferencia(sceneId, tipo) {
     async (ctx) => {
       const metas = await metasService.listar();
       if (metas.length === 0) {
-        await ctx.reply('Você não tem caixinhas. Use /addmeta primeiro.');
+        await ctx.reply('Você não tem caixinhas. Use /nova_caixinha primeiro.');
         return ctx.scene.leave();
       }
       ctx.wizard.state.metas = metas;
@@ -162,7 +162,7 @@ function criarWizardTransferencia(sceneId, tipo) {
   );
 }
 
-// Wizard de /apagarmeta: escolhe, confirma e exclui (bloqueia se houver saldo).
+// Wizard de /apagar_caixinha: escolhe, confirma e exclui (bloqueia se houver saldo).
 const apagarMetaScene = new Scenes.WizardScene(
   'apagar-meta',
 
@@ -187,7 +187,7 @@ const apagarMetaScene = new Scenes.WizardScene(
     await ctx.answerCbQuery();
     const meta = ctx.wizard.state.metas.find((m) => m.id === Number(data.slice(4)));
     if (!meta) {
-      await ctx.reply('⚠️ Caixinha não encontrada. Recomece com /apagarmeta.');
+      await ctx.reply('⚠️ Caixinha não encontrada. Recomece com /apagar_caixinha.');
       return ctx.scene.leave();
     }
     if (Number(meta.saldo_guardado) > 0) {
@@ -216,7 +216,7 @@ const atualizarCaixinhaScene = new Scenes.WizardScene(
   async (ctx) => {
     const metas = await metasService.listar();
     if (metas.length === 0) {
-      await ctx.reply('Você não tem caixinhas. Use /addmeta primeiro.');
+      await ctx.reply('Você não tem caixinhas. Use /nova_caixinha primeiro.');
       return ctx.scene.leave();
     }
     ctx.wizard.state.metas = metas;

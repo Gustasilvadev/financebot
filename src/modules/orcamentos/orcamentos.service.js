@@ -56,7 +56,7 @@ export function categoriasSugeridas() {
   return fluxoService.listarCategoriasUsadas();
 }
 
-// Lista os orçamentos (para o /apagarorcamento).
+// Lista os orçamentos (para o /apagar_orcamento).
 export function listar() {
   return orcamentosRepository.listarAtivos();
 }

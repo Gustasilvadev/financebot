@@ -8,7 +8,7 @@ function barraProgresso(guardado, objetivo, tamanho = 10) {
   return '▰'.repeat(cheias) + '▱'.repeat(tamanho - cheias);
 }
 
-// Bloco de uma meta no /metas.
+// Bloco de uma caixinha no /caixinhas.
 function blocoMeta(m) {
   const guardado = Number(m.saldo_guardado);
   const objetivo = Number(m.valor_objetivo);
@@ -19,21 +19,21 @@ function blocoMeta(m) {
 
 // Registra os comandos do módulo Metas no bot.
 export function registrarMetas(bot) {
-  bot.command('addmeta', (ctx) => ctx.scene.enter('add-meta'));
+  bot.command('nova_caixinha', (ctx) => ctx.scene.enter('add-meta'));
   bot.command('guardar', (ctx) => ctx.scene.enter('guardar'));
   bot.command('resgatar', (ctx) => ctx.scene.enter('resgatar'));
-  bot.command('apagarmeta', (ctx) => ctx.scene.enter('apagar-meta'));
+  bot.command('apagar_caixinha', (ctx) => ctx.scene.enter('apagar-meta'));
   bot.command('atualizar_caixinha', (ctx) => ctx.scene.enter('atualizar-caixinha'));
 
-  bot.command('metas', async (ctx) => {
+  bot.command('caixinhas', async (ctx) => {
     try {
       const metas = await metasService.listar();
       if (metas.length === 0) {
-        return ctx.reply('🐷 Nenhuma caixinha ainda. Use /addmeta.');
+        return ctx.reply('🐷 Nenhuma caixinha ainda. Use /nova_caixinha.');
       }
       await ctx.reply(`🐷 Suas caixinhas\n\n${metas.map(blocoMeta).join('\n\n')}`);
     } catch (err) {
-      console.error('[metas] Erro no /metas:', err);
+      console.error('[metas] Erro no /caixinhas:', err);
       await ctx.reply('⚠️ Não consegui listar as caixinhas agora.');
     }
   });

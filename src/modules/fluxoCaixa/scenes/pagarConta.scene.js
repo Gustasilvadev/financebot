@@ -98,7 +98,7 @@ export const pagarContaScene = new Scenes.WizardScene(
         return ctx.scene.leave();
       }
       let msg = `✅ ${resultado.pagas} conta(s) quitada(s) (${formatarBRL(resultado.total)}).`;
-      if (resultado.falhou) msg += '\n⚠️ Parei numa falha — rode /pagarconta de novo para o resto.';
+      if (resultado.falhou) msg += '\n⚠️ Parei numa falha — rode /pagar_conta de novo para o resto.';
       await ctx.editMessageText(msg);
       return ctx.scene.leave();
     }
