@@ -5,7 +5,7 @@ import { parseValorBRL, formatarBRL } from '../../shared/formatters/currency.js'
 import { tentarCancelar, responderErro, tecladoBancos } from '../../shared/scenes/helpers.js';
 import { pedirConfirmacao, criarPassoConfirmacao } from '../../shared/scenes/confirmacao.js';
 
-// Botões das metas, com prefixo de callback.
+// Botões das caixinhas, com prefixo de callback.
 function tecladoMetas(metas, prefixo) {
   return Markup.inlineKeyboard(
     metas.map((m) => [
@@ -14,7 +14,7 @@ function tecladoMetas(metas, prefixo) {
   );
 }
 
-// Wizard de /addmeta: nome → objetivo → confirma → cria.
+// Wizard de /addmeta: nome → objetivo → banco → confirma → cria.
 const addMetaScene = new Scenes.WizardScene(
   'add-meta',
 
@@ -43,28 +43,53 @@ const addMetaScene = new Scenes.WizardScene(
       return;
     }
     ctx.wizard.state.objetivoRaw = ctx.message.text;
-    return pedirConfirmacao(ctx, `🐷 Nova caixinha:\n• Nome: ${ctx.wizard.state.nome}\n• Objetivo: ${formatarBRL(valor)}`);
+
+    const { bancos } = await bancosService.listarComTotal();
+    if (bancos.length === 0) {
+      await ctx.reply('⚠️ Cadastre um banco antes (use /addbanco).');
+      return ctx.scene.leave();
+    }
+    ctx.wizard.state.bancos = bancos;
+    await ctx.reply('🏦 De qual banco é essa caixinha?', tecladoBancos(bancos, 'bank'));
+    return ctx.wizard.next();
+  },
+
+  async (ctx) => {
+    if (await tentarCancelar(ctx)) return;
+    const data = ctx.callbackQuery?.data;
+    if (!data || !data.startsWith('bank:')) {
+      await ctx.reply('👆 Escolha um banco nos botões.');
+      return;
+    }
+    await ctx.answerCbQuery();
+    const banco = ctx.wizard.state.bancos.find((b) => b.id === Number(data.slice(5)));
+    ctx.wizard.state.bancoId = banco.id;
+    ctx.wizard.state.bancoNome = banco.nome;
+    const st = ctx.wizard.state;
+    return pedirConfirmacao(
+      ctx,
+      `🐷 Nova caixinha:\n• Nome: ${st.nome}\n• Objetivo: ${formatarBRL(parseValorBRL(st.objetivoRaw))}\n• Banco: ${st.bancoNome}`
+    );
   },
 
   criarPassoConfirmacao(async (ctx) => {
     const st = ctx.wizard.state;
     try {
-      const meta = await metasService.criarMeta(st.nome, st.objetivoRaw);
-      await ctx.reply(`✅ Caixinha "${meta.nome}" criada (objetivo ${formatarBRL(meta.valor_objetivo)}).`);
+      const meta = await metasService.criarMeta(st.nome, st.objetivoRaw, st.bancoId);
+      await ctx.reply(`✅ Caixinha "${meta.nome}" criada no ${st.bancoNome} (objetivo ${formatarBRL(meta.valor_objetivo)}).`);
     } catch (err) {
-      await responderErro(ctx, err, 'criar a meta');
+      await responderErro(ctx, err, 'criar a caixinha');
     }
   })
 );
 
-// Fábrica dos wizards de transferência /guardar e /resgatar (meta → banco → valor → confirma).
+// Fábrica dos wizards de transferência /guardar e /resgatar (caixinha → valor → confirma).
 function criarWizardTransferencia(sceneId, tipo) {
   const ehGuardar = tipo === 'GUARDAR';
 
   return new Scenes.WizardScene(
     sceneId,
 
-    // Lista as metas.
     async (ctx) => {
       const metas = await metasService.listar();
       if (metas.length === 0) {
@@ -76,7 +101,6 @@ function criarWizardTransferencia(sceneId, tipo) {
       return ctx.wizard.next();
     },
 
-    // Recebe a meta e lista os bancos.
     async (ctx) => {
       if (await tentarCancelar(ctx)) return;
       const data = ctx.callbackQuery?.data;
@@ -91,33 +115,11 @@ function criarWizardTransferencia(sceneId, tipo) {
         return ctx.scene.leave();
       }
       ctx.wizard.state.meta = meta;
-
-      const { bancos } = await bancosService.listarComTotal();
-      if (bancos.length === 0) {
-        await ctx.reply('⚠️ Cadastre um banco antes (use /addbanco).');
-        return ctx.scene.leave();
-      }
-      ctx.wizard.state.bancos = bancos;
-      await ctx.reply(ehGuardar ? '🏦 De qual banco sai o dinheiro?' : '🏦 Para qual banco vai o dinheiro?', tecladoBancos(bancos, 'bank'));
+      ctx.wizard.state.banco = await bancosService.buscarBanco(meta.banco_id);
+      await ctx.reply(`💰 Qual valor? (banco: ${ctx.wizard.state.banco.nome})`);
       return ctx.wizard.next();
     },
 
-    // Recebe o banco e pergunta o valor.
-    async (ctx) => {
-      if (await tentarCancelar(ctx)) return;
-      const data = ctx.callbackQuery?.data;
-      if (!data || !data.startsWith('bank:')) {
-        await ctx.reply('👆 Escolha um banco nos botões.');
-        return;
-      }
-      await ctx.answerCbQuery();
-      const banco = ctx.wizard.state.bancos.find((b) => b.id === Number(data.slice(5)));
-      ctx.wizard.state.banco = banco;
-      await ctx.reply('💰 Qual valor?');
-      return ctx.wizard.next();
-    },
-
-    // Recebe o valor, valida e pede confirmação.
     async (ctx) => {
       if (await tentarCancelar(ctx)) return;
       const valor = parseValorBRL(ctx.message?.text);
@@ -126,7 +128,6 @@ function criarWizardTransferencia(sceneId, tipo) {
         return;
       }
       const st = ctx.wizard.state;
-
       if (!ehGuardar && valor > Number(st.meta.saldo_guardado)) {
         await ctx.reply(`❌ A caixinha "${st.meta.nome}" só tem ${formatarBRL(st.meta.saldo_guardado)}. Envie outro valor (ou /cancelar).`);
         return;
@@ -135,28 +136,27 @@ function criarWizardTransferencia(sceneId, tipo) {
 
       const linhas = ehGuardar
         ? [`🐷 Guardar ${formatarBRL(valor)}`, `• Caixinha: ${st.meta.nome}`, `• Sai do banco: ${st.banco.nome}`]
-        : [`🐷 Resgatar ${formatarBRL(valor)}`, `• Da caixinha: ${st.meta.nome}`, `• Vai para o banco: ${st.banco.nome}`];
+        : [`🐷 Resgatar ${formatarBRL(valor)}`, `• Da caixinha: ${st.meta.nome}`, `• Volta para o banco: ${st.banco.nome}`];
       if (ehGuardar && valor > Number(st.banco.saldo_atual)) {
         linhas.push(`⚠️ Isso deixa "${st.banco.nome}" negativo (saldo atual ${formatarBRL(st.banco.saldo_atual)}).`);
       }
       return pedirConfirmacao(ctx, linhas.join('\n'));
     },
 
-    // Ao confirmar, executa a transferência.
     criarPassoConfirmacao(async (ctx) => {
       const st = ctx.wizard.state;
       try {
         if (ehGuardar) {
-          const { meta, valor, atingiu } = await metasService.guardar(st.meta.id, st.banco.id, st.valorRaw);
+          const { meta, valor, atingiu } = await metasService.guardar(st.meta.id, st.valorRaw);
           let msg = `✅ ${formatarBRL(valor)} guardado em "${meta.nome}" (${formatarBRL(meta.saldo_guardado)}/${formatarBRL(meta.valor_objetivo)}).`;
           if (atingiu) msg += `\n🎉 Objetivo atingido!`;
           await ctx.reply(msg);
         } else {
-          const { meta, valor } = await metasService.resgatar(st.meta.id, st.banco.id, st.valorRaw);
+          const { meta, valor } = await metasService.resgatar(st.meta.id, st.valorRaw);
           await ctx.reply(`✅ ${formatarBRL(valor)} resgatado de "${meta.nome}" para ${st.banco.nome} (restam ${formatarBRL(meta.saldo_guardado)}).`);
         }
       } catch (err) {
-        await responderErro(ctx, err, ehGuardar ? 'guardar na meta' : 'resgatar da meta');
+        await responderErro(ctx, err, ehGuardar ? 'guardar na caixinha' : 'resgatar da caixinha');
       }
     })
   );
@@ -204,7 +204,7 @@ const apagarMetaScene = new Scenes.WizardScene(
       await metasService.excluir(meta.id);
       await ctx.reply(`🗑️ Caixinha "${meta.nome}" apagada.`);
     } catch (err) {
-      await responderErro(ctx, err, 'apagar a meta');
+      await responderErro(ctx, err, 'apagar a caixinha');
     }
   })
 );

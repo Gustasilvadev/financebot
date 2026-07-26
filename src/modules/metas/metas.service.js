@@ -31,14 +31,15 @@ export async function buscarMeta(id) {
   return meta;
 }
 
-// Cria uma meta (nome único).
-export async function criarMeta(nomeRaw, objetivoRaw) {
+// Cria uma caixinha vinculada a um banco (nome único).
+export async function criarMeta(nomeRaw, objetivoRaw, bancoId) {
   const nome = validarNome(nomeRaw);
   const valorObjetivo = validarValorPositivo(objetivoRaw);
+  await bancosService.buscarBanco(bancoId);
   try {
-    return await metasRepository.criar({ nome, valor_objetivo: valorObjetivo });
+    return await metasRepository.criar({ nome, valor_objetivo: valorObjetivo, banco_id: bancoId });
   } catch (err) {
-    if (err?.code === '23505') throw new ErroDeNegocio(`Já existe uma meta chamada "${nome}".`);
+    if (err?.code === '23505') throw new ErroDeNegocio(`Já existe uma caixinha chamada "${nome}".`);
     throw err;
   }
 }
@@ -46,6 +47,23 @@ export async function criarMeta(nomeRaw, objetivoRaw) {
 // Lista todas as metas.
 export function listar() {
   return metasRepository.listarTodas();
+}
+
+// Soma o guardado nas caixinhas, agrupado por banco_id (para o /bancos).
+export async function saldoGuardadoPorBanco() {
+  const metas = await metasRepository.listarTodas();
+  const mapa = new Map();
+  for (const m of metas) {
+    if (m.banco_id == null) continue;
+    mapa.set(m.banco_id, arred((mapa.get(m.banco_id) ?? 0) + Number(m.saldo_guardado)));
+  }
+  return mapa;
+}
+
+// Indica se um banco tem caixinhas vinculadas (para bloquear a exclusão do banco).
+export async function bancoTemCaixinhas(bancoId) {
+  const metas = await metasRepository.listarTodas();
+  return metas.some((m) => m.banco_id === bancoId);
 }
 
 // Registra a transferência no log sem quebrar a operação se o log falhar.
@@ -57,11 +75,12 @@ async function registrarTransacaoSeguro(metaId, bancoId, tipo, valor) {
   }
 }
 
-// Guarda dinheiro: debita o banco e credita a caixinha (com rollback se a caixinha falhar).
-export async function guardar(metaId, bancoId, valorRaw) {
+// Guarda dinheiro: debita o banco da caixinha e credita a caixinha (com rollback se a caixinha falhar).
+export async function guardar(metaId, valorRaw) {
   const valor = validarValorPositivo(valorRaw);
   const meta = await buscarMeta(metaId);
-  await bancosService.buscarBanco(bancoId);
+  const bancoId = meta.banco_id;
+  if (bancoId == null) throw new ErroDeNegocio('Esta caixinha não está vinculada a um banco.');
 
   await bancosService.ajustarSaldo(bancoId, -valor);
   let atualizada;
@@ -77,14 +96,15 @@ export async function guardar(metaId, bancoId, valorRaw) {
   return { meta: atualizada, valor, atingiu };
 }
 
-// Resgata dinheiro: debita a caixinha e credita o banco (com rollback se o banco falhar).
-export async function resgatar(metaId, bancoId, valorRaw) {
+// Resgata dinheiro: debita a caixinha e credita o banco dela (com rollback se o banco falhar).
+export async function resgatar(metaId, valorRaw) {
   const valor = validarValorPositivo(valorRaw);
   const meta = await buscarMeta(metaId);
-  await bancosService.buscarBanco(bancoId);
+  const bancoId = meta.banco_id;
+  if (bancoId == null) throw new ErroDeNegocio('Esta caixinha não está vinculada a um banco.');
 
   if (valor > Number(meta.saldo_guardado)) {
-    throw new ErroDeNegocio(`Saldo guardado insuficiente. Na meta há ${formatarBRL(meta.saldo_guardado)}.`);
+    throw new ErroDeNegocio(`Saldo guardado insuficiente. Na caixinha há ${formatarBRL(meta.saldo_guardado)}.`);
   }
 
   const atualizada = await metasRepository.atualizarSaldoGuardado(metaId, arred(Number(meta.saldo_guardado) - valor));

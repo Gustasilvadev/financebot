@@ -1,5 +1,6 @@
 import { Scenes } from 'telegraf';
 import * as bancosService from './bancos.service.js';
+import * as metasService from '../metas/metas.service.js';
 import { parseValorBRL, formatarBRL } from '../../shared/formatters/currency.js';
 import { tentarCancelar, responderErro, tecladoBancos } from '../../shared/scenes/helpers.js';
 import { pedirConfirmacao, criarPassoConfirmacao } from '../../shared/scenes/confirmacao.js';
@@ -170,6 +171,11 @@ const apagarBancoScene = new Scenes.WizardScene(
     const banco = ctx.wizard.state.bancos.find((b) => b.id === id);
     if (!banco) {
       await ctx.reply('⚠️ Banco não encontrado. Recomece com /apagarbanco.');
+      return ctx.scene.leave();
+    }
+
+    if (await metasService.bancoTemCaixinhas(id)) {
+      await ctx.reply(`⚠️ "${banco.nome}" tem caixinhas vinculadas. Apague ou esvazie as caixinhas antes de remover o banco.`);
       return ctx.scene.leave();
     }
 

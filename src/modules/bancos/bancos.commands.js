@@ -1,20 +1,35 @@
 import * as bancosService from './bancos.service.js';
+import * as metasService from '../metas/metas.service.js';
 import { formatarBRL } from '../../shared/formatters/currency.js';
 
 // Registra os comandos do módulo Bancos no bot.
 export function registrarBancos(bot) {
-  // /bancos — lista os bancos e o total consolidado.
+  // /bancos — cada banco com disponível e guardado em caixinhas, mais o total.
   bot.command('bancos', async (ctx) => {
     try {
-      const { bancos, total } = await bancosService.listarComTotal();
-
+      const { bancos } = await bancosService.listarComTotal();
       if (bancos.length === 0) {
         return ctx.reply('Você ainda não tem bancos cadastrados. Use /addbanco para começar.');
       }
+      const guardadoPorBanco = await metasService.saldoGuardadoPorBanco();
 
-      const linhas = bancos.map((b) => `• ${b.nome}: ${formatarBRL(b.saldo_atual)}`).join('\n');
+      let totalDisponivel = 0;
+      let totalGuardado = 0;
+      const blocos = bancos.map((b) => {
+        const disponivel = Number(b.saldo_atual);
+        const guardado = guardadoPorBanco.get(b.id) ?? 0;
+        totalDisponivel += disponivel;
+        totalGuardado += guardado;
+        const extra = guardado > 0 ? `\n   🐷 nas caixinhas: ${formatarBRL(guardado)}` : '';
+        return `• ${b.nome}: ${formatarBRL(disponivel)}${extra}`;
+      });
+
+      const total = Math.round((totalDisponivel + totalGuardado) * 100) / 100;
       await ctx.reply(
-        `💳 Seus bancos\n\n${linhas}\n──────────────\n💰 Total: ${formatarBRL(total)}`
+        `💳 Seus bancos\n\n${blocos.join('\n')}\n──────────────\n` +
+          `💰 Disponível: ${formatarBRL(totalDisponivel)}\n` +
+          `🐷 Nas caixinhas: ${formatarBRL(totalGuardado)}\n` +
+          `Σ Total: ${formatarBRL(total)}`
       );
     } catch (err) {
       console.error('[bancos] Erro no /bancos:', err);

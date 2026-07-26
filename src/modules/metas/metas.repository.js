@@ -18,8 +18,8 @@ export async function buscarPorId(id) {
 }
 
 // Cria uma meta e retorna o registro.
-export async function criar({ nome, valor_objetivo }) {
-  const { data, error } = await supabase.from(TABELA).insert({ nome, valor_objetivo }).select().single();
+export async function criar({ nome, valor_objetivo, banco_id }) {
+  const { data, error } = await supabase.from(TABELA).insert({ nome, valor_objetivo, banco_id }).select().single();
   if (error) throw error;
   return data;
 }

@@ -59,6 +59,7 @@ create table if not exists metas (
   nome           varchar(100) not null unique,
   valor_objetivo decimal(12, 2) not null,
   saldo_guardado decimal(12, 2) default 0.00,
+  banco_id       int references bancos(id) on delete set null,
   criado_em      timestamp with time zone default now()
 );
 
@@ -66,7 +67,7 @@ create table if not exists meta_transacoes (
   id        serial primary key,
   meta_id   int references metas(id) on delete cascade,
   banco_id  int references bancos(id) on delete set null,
-  tipo      varchar(15) check (tipo in ('GUARDAR', 'RESGATAR')),
+  tipo      varchar(15) check (tipo in ('GUARDAR', 'RESGATAR', 'RENDIMENTO')),
   valor     decimal(12, 2) not null,
   criado_em timestamp with time zone default now()
 );
