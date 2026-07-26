@@ -2,11 +2,11 @@ import { supabase } from '../../config/supabaseClient.js';
 
 const TABELA = 'emprestimos';
 
-// Insere um empréstimo e retorna o registro criado.
-export async function criar(dados) {
-  const { data, error } = await supabase.from(TABELA).insert(dados).select().single();
+// Insere um ou mais empréstimos (parcelas) e retorna os registros criados.
+export async function criarVarias(linhas) {
+  const { data, error } = await supabase.from(TABELA).insert(linhas).select();
   if (error) throw error;
-  return data;
+  return data ?? [];
 }
 
 // Lista os empréstimos ativos, ordenados pelo vencimento final.

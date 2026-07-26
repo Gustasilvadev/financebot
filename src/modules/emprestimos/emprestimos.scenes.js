@@ -8,14 +8,26 @@ import { pedirConfirmacao, criarPassoConfirmacao } from '../../shared/scenes/con
 
 // Monta o resumo de confirmação de um empréstimo a partir do estado do wizard.
 function montarResumoEmprestimo(st) {
+  const acordado = parseValorBRL(st.valorAcordadoRaw);
+  const aReceber = st.numeroParcelas > 1 ? `${formatarBRL(acordado)} em ${st.numeroParcelas}x` : formatarBRL(acordado);
   return [
     '🤝 Confira o empréstimo:',
     `• Devedor: ${st.devedor}`,
     `• Saiu do bolso: ${formatarBRL(parseValorBRL(st.valorEmprestadoRaw))}`,
-    `• A receber: ${formatarBRL(parseValorBRL(st.valorAcordadoRaw))}`,
-    `• Vencimento: ${formatarData(parseData(st.dataRaw))}`,
+    `• A receber: ${aReceber}`,
+    `• 1º vencimento: ${formatarData(parseData(st.dataRaw))}`,
     `• Banco: ${st.bancoNome}`,
   ].join('\n');
+}
+
+// Mensagem de sucesso do empréstimo (à vista ou parcelado).
+function montarRespostaEmprestimo(r) {
+  if (r.numeroParcelas > 1) {
+    return `✅ Empréstimo para ${r.devedor} em ${r.numeroParcelas}x: saiu ${formatarBRL(r.valorEmprestado)} agora, ` +
+      `a receber ${formatarBRL(r.valorAcordado)} (de ${formatarData(r.primeiroVencimento)} a ${formatarData(r.ultimoVencimento)}).`;
+  }
+  return `✅ Empréstimo para ${r.devedor} registrado: saiu ${formatarBRL(r.valorEmprestado)}, ` +
+    `a receber ${formatarBRL(r.valorAcordado)} até ${formatarData(r.primeiroVencimento)}.`;
 }
 
 // Wizard de /emprestar: registra o empréstimo e debita do banco.
@@ -86,7 +98,7 @@ const emprestarScene = new Scenes.WizardScene(
     return ctx.wizard.next();
   },
 
-  // Recebe o banco e pede confirmação.
+  // Recebe o banco, pergunta o número de parcelas.
   async (ctx) => {
     if (await tentarCancelar(ctx)) return;
     const data = ctx.callbackQuery?.data;
@@ -98,6 +110,19 @@ const emprestarScene = new Scenes.WizardScene(
     const bancoId = Number(data.slice(5));
     ctx.wizard.state.bancoId = bancoId;
     ctx.wizard.state.bancoNome = ctx.wizard.state.bancos?.find((b) => b.id === bancoId)?.nome ?? '—';
+    await ctx.reply('🔢 Vai receber em quantas parcelas? (1 = à vista)');
+    return ctx.wizard.next();
+  },
+
+  // Recebe as parcelas, valida e pede confirmação.
+  async (ctx) => {
+    if (await tentarCancelar(ctx)) return;
+    const n = Number(ctx.message?.text?.trim());
+    if (!Number.isInteger(n) || n < 1 || n > 12) {
+      await ctx.reply('❌ Número de parcelas inválido (1 a 12). Tente de novo (ou /cancelar).');
+      return;
+    }
+    ctx.wizard.state.numeroParcelas = n;
     return pedirConfirmacao(ctx, montarResumoEmprestimo(ctx.wizard.state));
   },
 
@@ -105,17 +130,15 @@ const emprestarScene = new Scenes.WizardScene(
   criarPassoConfirmacao(async (ctx) => {
     const st = ctx.wizard.state;
     try {
-      const emp = await emprestimosService.registrarEmprestimo({
+      const r = await emprestimosService.registrarEmprestimo({
         devedor: st.devedor,
         valorEmprestadoRaw: st.valorEmprestadoRaw,
         valorAcordadoRaw: st.valorAcordadoRaw,
         dataRaw: st.dataRaw,
         bancoId: st.bancoId,
+        numeroParcelas: st.numeroParcelas,
       });
-      await ctx.reply(
-        `✅ Empréstimo para ${emp.devedor} registrado: saiu ${formatarBRL(emp.valor_emprestado)}, ` +
-          `a receber ${formatarBRL(emp.valor_acordado)} até ${formatarData(emp.data_vencimento_final)}.`
-      );
+      await ctx.reply(montarRespostaEmprestimo(r));
     } catch (err) {
       await responderErro(ctx, err, 'registrar o empréstimo');
     }
