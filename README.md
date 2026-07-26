@@ -1,6 +1,6 @@
 # 💰 FinanceBot
 
-Bot de Telegram para **gestão completa de finanças pessoais**. Centraliza contas, gastos, empréstimos, orçamentos, assinaturas e metas de poupança — tudo no chat, de forma rápida e conversacional.
+Bot de Telegram para **gestão completa de finanças pessoais**. Centraliza contas, gastos, empréstimos, orçamentos, assinaturas e caixinhas de poupança — tudo no chat, de forma rápida e conversacional.
 
 > Projeto pessoal · Versão 2.0
 
@@ -11,10 +11,10 @@ Gestão de saldos de contas independentes (ex.: Nubank, PicPay, carteira).
 
 | Comando | Descrição |
 |---|---|
-| `/bancos` | Lista as contas e o saldo total consolidado |
-| `/addbanco` | Cadastra uma nova conta (nome + saldo inicial) |
-| `/atualizarsaldo` | Corrige o saldo de uma conta |
-| `/apagarbanco` | Remove uma conta (com confirmação) |
+| `/bancos` | Lista as contas com o **disponível** e o **guardado em caixinhas**, mais o total |
+| `/novo_banco` | Cadastra uma nova conta (nome + saldo inicial) |
+| `/atualizar_saldo` | Corrige o saldo de uma conta |
+| `/apagar_banco` | Remove uma conta (com confirmação) |
 
 ### 💸 Fluxo de Caixa
 Entradas e saídas com vencimento, categorias, vínculo com um banco e parcelamento.
@@ -23,7 +23,7 @@ Entradas e saídas com vencimento, categorias, vínculo com um banco e parcelame
 |---|---|
 | `/gasto` | Registra uma despesa (com parcelamento opcional) |
 | `/receita` | Registra uma entrada (com parcelamento opcional) |
-| `/pagarconta` | Dá baixa nas pendências do mês (uma a uma ou todas) |
+| `/pagar_conta` | Dá baixa nas pendências do mês (uma a uma ou todas) |
 | `/editar` | Edita ou exclui um lançamento, reconciliando o saldo |
 | `/mes` | Balanço do mês: receitas, despesas pagas/pendentes e saldo previsto |
 
@@ -32,9 +32,9 @@ Controle de valores emprestados a terceiros, com débito/crédito automático no
 
 | Comando | Descrição |
 |---|---|
-| `/emprestar` | Registra um empréstimo e debita o valor do banco |
+| `/novo_emprestimo` | Registra um empréstimo **à vista ou parcelado** (recebe em N vezes) e debita o valor do banco |
 | `/emprestimos` | Lista quem te deve e o total a receber |
-| `/quitaremprestimo` | Dá baixa e credita o valor acordado no banco |
+| `/quitar_emprestimo` | Dá baixa (parcela a parcela) e credita o valor no banco |
 
 ### 📊 Gráficos
 Visão visual do mês em imagem, direto no chat.
@@ -51,8 +51,8 @@ Limites de gasto por categoria, com alerta automático ao lançar despesas.
 | Comando | Descrição |
 |---|---|
 | `/orcamentos` | Lista os limites e o consumo do mês (🟢 ok · ⚠️ perto · 🔴 estourado) |
-| `/addorcamento` | Define o limite mensal de uma categoria |
-| `/apagarorcamento` | Remove um orçamento |
+| `/novo_orcamento` | Define o limite mensal de uma categoria |
+| `/apagar_orcamento` | Remove um orçamento |
 
 ### 🔁 Recorrentes / Assinaturas
 Despesas e receitas fixas (streaming, aluguel, salário) que o bot lança sozinho todo mês, no dia certo.
@@ -60,25 +60,26 @@ Despesas e receitas fixas (streaming, aluguel, salário) que o bot lança sozinh
 | Comando | Descrição |
 |---|---|
 | `/recorrencias` | Lista as recorrências (ativas e pausadas) |
-| `/addrecorrencia` | Cadastra uma recorrência |
-| `/pausarrecorrencia` | Pausa ou retoma uma recorrência |
-| `/apagarrecorrencia` | Remove uma recorrência |
+| `/nova_recorrencia` | Cadastra uma recorrência |
+| `/pausar_recorrencia` | Pausa ou retoma uma recorrência |
+| `/apagar_recorrencia` | Remove uma recorrência |
 
-### 🐷 Metas / Caixinhas
-Caixinhas de poupança com objetivo. Guardar/resgatar move o dinheiro entre o banco e a caixinha.
+### 🐷 Caixinhas
+Caixinhas de poupança com objetivo, **vinculadas a um banco**. Guardar/resgatar move o dinheiro entre o banco e a caixinha.
 
 | Comando | Descrição |
 |---|---|
-| `/metas` | Lista as caixinhas com barra de progresso |
-| `/addmeta` | Cria uma caixinha (nome + objetivo) |
-| `/guardar` | Reserva dinheiro de um banco numa caixinha |
-| `/resgatar` | Devolve dinheiro de uma caixinha para um banco |
-| `/apagarmeta` | Remove uma caixinha |
+| `/caixinhas` | Lista as caixinhas com barra de progresso |
+| `/nova_caixinha` | Cria uma caixinha de um banco (nome + objetivo) |
+| `/guardar` | Reserva dinheiro do banco na caixinha |
+| `/resgatar` | Devolve dinheiro da caixinha para o banco |
+| `/atualizar_caixinha` | Registra o **rendimento** (reconcilia com o saldo do app do banco) |
+| `/apagar_caixinha` | Remove uma caixinha |
 | `/patrimonio` | Total real: disponível nos bancos + guardado nas caixinhas |
 
 ### 🔔 Extras
 - **Menu de comandos:** ao digitar `/`, a lista aparece com autocomplete; `/help` mostra o guia completo.
-- **Rotina diária:** um cron externo dispara, uma vez por dia, a materialização das recorrências e o aviso dos vencimentos do dia (contas e empréstimos) — o mesmo mecanismo mantém o serviço ativo.
+- **Rotina diária (cron):** uma vez por dia o bot materializa as recorrências, avisa os vencimentos (contas e empréstimos) e, no **dia 1º do mês**, lembra de atualizar os rendimentos das caixinhas. O mesmo mecanismo mantém o serviço ativo.
 - Dentro de qualquer cadastro, `/cancelar` aborta a operação.
 
 ## 🛠️ Tecnologias
