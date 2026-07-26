@@ -29,6 +29,7 @@ const COMANDOS = [
   { command: 'guardar', description: 'Guardar dinheiro numa caixinha' },
   { command: 'resgatar', description: 'Resgatar de uma caixinha' },
   { command: 'apagarmeta', description: 'Remover uma caixinha' },
+  { command: 'atualizar_caixinha', description: 'Registrar rendimento de uma caixinha' },
   { command: 'patrimonio', description: 'Total: bancos + caixinhas' },
   { command: 'help', description: 'Ajuda e lista de comandos' },
 ];
@@ -76,6 +77,7 @@ export const TEXTO_AJUDA = [
   '• /addmeta — criar caixinha',
   '• /guardar — guardar dinheiro',
   '• /resgatar — resgatar dinheiro',
+  '• /atualizar_caixinha — registrar rendimento',
   '• /apagarmeta — remover caixinha',
   '• /patrimonio — bancos + caixinhas',
   '',

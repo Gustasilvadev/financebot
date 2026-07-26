@@ -23,6 +23,7 @@ export function registrarMetas(bot) {
   bot.command('guardar', (ctx) => ctx.scene.enter('guardar'));
   bot.command('resgatar', (ctx) => ctx.scene.enter('resgatar'));
   bot.command('apagarmeta', (ctx) => ctx.scene.enter('apagar-meta'));
+  bot.command('atualizar_caixinha', (ctx) => ctx.scene.enter('atualizar-caixinha'));
 
   bot.command('metas', async (ctx) => {
     try {

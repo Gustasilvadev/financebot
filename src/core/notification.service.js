@@ -6,6 +6,7 @@ import { formatarData, hojeISO } from '../shared/formatters/date.js';
 import * as fluxoService from '../modules/fluxoCaixa/fluxoCaixa.service.js';
 import * as emprestimosService from '../modules/emprestimos/emprestimos.service.js';
 import * as recorrenciasService from '../modules/recorrencias/recorrencias.service.js';
+import * as metasService from '../modules/metas/metas.service.js';
 
 // Faz uma query trivial só para manter o Supabase acordado.
 export async function manterVivo() {
@@ -68,9 +69,23 @@ export async function materializarRecorrenciasDeHoje() {
   return { materializadas: criadas.length };
 }
 
-// Rotina diária do cron: primeiro materializa as recorrências, depois notifica os vencimentos.
+// No dia 1 do mês, se houver caixinhas, lembra de registrar os rendimentos.
+export async function lembrarFechamentoDeCaixinhas() {
+  if (Number(hojeISO().slice(8, 10)) !== 1) return { lembrete: false };
+  const metas = await metasService.listar();
+  if (metas.length === 0) return { lembrete: false };
+
+  await bot.telegram.sendMessage(
+    config.telegramUserId,
+    '🔔 Dia de Fechamento! Verifique o app do banco e use /atualizar_caixinha para registrar os rendimentos das suas caixinhas.'
+  );
+  return { lembrete: true };
+}
+
+// Rotina diária do cron: materializa recorrências, notifica vencimentos e lembra do fechamento.
 export async function rotinaDiaria() {
   const recorrencias = await materializarRecorrenciasDeHoje();
   const vencimentos = await notificarVencimentosDeHoje();
-  return { recorrencias, vencimentos };
+  const caixinhas = await lembrarFechamentoDeCaixinhas();
+  return { recorrencias, vencimentos, caixinhas };
 }

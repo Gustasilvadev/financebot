@@ -209,7 +209,60 @@ const apagarMetaScene = new Scenes.WizardScene(
   })
 );
 
+// Wizard de /atualizar_caixinha: reconcilia o saldo com o app do banco (registra RENDIMENTO).
+const atualizarCaixinhaScene = new Scenes.WizardScene(
+  'atualizar-caixinha',
+
+  async (ctx) => {
+    const metas = await metasService.listar();
+    if (metas.length === 0) {
+      await ctx.reply('Você não tem caixinhas. Use /addmeta primeiro.');
+      return ctx.scene.leave();
+    }
+    ctx.wizard.state.metas = metas;
+    await ctx.reply('📈 Atualizar o saldo de qual caixinha?', tecladoMetas(metas, 'meta'));
+    return ctx.wizard.next();
+  },
+
+  async (ctx) => {
+    if (await tentarCancelar(ctx)) return;
+    const data = ctx.callbackQuery?.data;
+    if (!data || !data.startsWith('meta:')) {
+      await ctx.reply('👆 Escolha uma caixinha nos botões (ou /cancelar).');
+      return;
+    }
+    await ctx.answerCbQuery();
+    const meta = ctx.wizard.state.metas.find((m) => m.id === Number(data.slice(5)));
+    if (!meta) {
+      await ctx.reply('⚠️ Caixinha não encontrada. Recomece com /atualizar_caixinha.');
+      return ctx.scene.leave();
+    }
+    ctx.wizard.state.meta = meta;
+    await ctx.reply(`💰 Qual o saldo atual de "${meta.nome}" no app do banco?\n(registrado agora: ${formatarBRL(meta.saldo_guardado)})`);
+    return ctx.wizard.next();
+  },
+
+  async (ctx) => {
+    if (await tentarCancelar(ctx)) return;
+    if (parseValorBRL(ctx.message?.text) === null) {
+      await ctx.reply('❌ Valor inválido. Ex.: 1050 ou 1050,50 (ou /cancelar).');
+      return;
+    }
+    try {
+      const { meta, rendimento } = await metasService.registrarRendimento(ctx.wizard.state.meta.id, ctx.message.text);
+      if (rendimento > 0) {
+        await ctx.reply(`🎉 Rendimento de ${formatarBRL(rendimento)} registrado em "${meta.nome}"! Novo saldo: ${formatarBRL(meta.saldo_guardado)}.`);
+      } else {
+        await ctx.reply(`✅ Sem rendimento novo em "${meta.nome}" (segue em ${formatarBRL(meta.saldo_guardado)}).`);
+      }
+    } catch (err) {
+      await responderErro(ctx, err, 'atualizar a caixinha');
+    }
+    return ctx.scene.leave();
+  }
+);
+
 const guardarScene = criarWizardTransferencia('guardar', 'GUARDAR');
 const resgatarScene = criarWizardTransferencia('resgatar', 'RESGATAR');
 
-export const metasScenes = [addMetaScene, guardarScene, resgatarScene, apagarMetaScene];
+export const metasScenes = [addMetaScene, guardarScene, resgatarScene, apagarMetaScene, atualizarCaixinhaScene];

@@ -119,6 +119,23 @@ export async function resgatar(metaId, valorRaw) {
   return { meta: atualizada, valor };
 }
 
+// Reconcilia o saldo da caixinha com o app do banco; a diferença vira RENDIMENTO (não mexe no banco).
+export async function registrarRendimento(metaId, valorRaw) {
+  const novoSaldo = validarValorPositivo(valorRaw);
+  const meta = await buscarMeta(metaId);
+  const atual = Number(meta.saldo_guardado);
+
+  if (novoSaldo < atual) {
+    throw new ErroDeNegocio(`Valor menor que o guardado (${formatarBRL(atual)}). Se você tirou dinheiro, use /resgatar.`);
+  }
+  const rendimento = arred(novoSaldo - atual);
+  if (rendimento === 0) return { meta, rendimento: 0 };
+
+  const atualizada = await metasRepository.atualizarSaldoGuardado(metaId, arred(novoSaldo));
+  await registrarTransacaoSeguro(metaId, meta.banco_id, 'RENDIMENTO', rendimento);
+  return { meta: atualizada, rendimento };
+}
+
 // Exclui uma meta (bloqueia se ainda houver saldo guardado).
 export async function excluir(id) {
   const meta = await buscarMeta(id);
