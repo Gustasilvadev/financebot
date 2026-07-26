@@ -75,7 +75,7 @@ const emprestarScene = new Scenes.WizardScene(
       return;
     }
     ctx.wizard.state.valorAcordadoRaw = ctx.message.text;
-    await ctx.reply('📅 Qual o vencimento final? ("hoje" ou DD/MM)');
+    await ctx.reply('📅 Qual a data do 1º vencimento? As parcelas seguintes vencem a cada mês. ("hoje" ou DD/MM)');
     return ctx.wizard.next();
   },
 
